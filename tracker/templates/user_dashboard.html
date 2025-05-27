@@ -1,0 +1,15 @@
+<!-- templates/user_dashboard.html -->
+<h1>User Dashboard</h1>
+<p>Welcome, {{ request.session.username }}!</p>
+
+<h2>All Problems</h2>
+<ul>
+  {% for problem in problems %}
+    <li>
+      {{ problem.name }} ({{ problem.topic }} - {{ problem.difficulty }})
+      <!-- You can show notes and progress for each problem -->
+    </li>
+  {% empty %}
+    <li>No problems available.</li>
+  {% endfor %}
+</ul>
