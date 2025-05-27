@@ -1,0 +1,21 @@
+<!-- templates/add_problem.html -->
+<h2>Add Problem</h2>
+<form method="POST">
+  {% csrf_token %}
+  <label>Topic:</label><br>
+  <input type="text" name="topic" required><br>
+
+  <label>Difficulty:</label><br>
+  <input type="text" name="difficulty" required><br>
+
+  <label>Name:</label><br>
+  <input type="text" name="name" required><br>
+
+  <label>YouTube Link:</label><br>
+  <input type="url" name="youtube_link"><br>
+
+  <label>Practice Link:</label><br>
+  <input type="url" name="practice_link"><br>
+
+  <button type="submit">Add Problem</button>
+</form>
