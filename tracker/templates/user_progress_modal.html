@@ -1,0 +1,77 @@
+<!-- User Progress Overview -->
+<div class="user-progress-overview mb-4">
+    <h5>{{ user.username }}'s Progress</h5>
+    <div class="progress mb-3">
+        <div class="progress-bar" role="progressbar" 
+             style="width: {{ completion_rate }}%"
+             aria-valuenow="{{ completion_rate }}" 
+             aria-valuemin="0" 
+             aria-valuemax="100">
+            {{ completion_rate|floatformat:1 }}%
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-6">
+            <p class="mb-1">Total Problems</p>
+            <h4>{{ total_problems }}</h4>
+        </div>
+        <div class="col-6">
+            <p class="mb-1">Problems Solved</p>
+            <h4>{{ completed_problems }}</h4>
+        </div>
+    </div>
+</div>
+
+<!-- Completed Problems -->
+<div class="completed-problems mb-4">
+    <h6>Completed Problems</h6>
+    <div class="table-responsive">
+        <table class="table table-sm">
+            <thead>
+                <tr>
+                    <th>Problem</th>
+                    <th>Topic</th>
+                    <th>Difficulty</th>
+                    <th>Notes</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for progress in progress_data %}
+                <tr>
+                    <td>{{ progress.problem.name }}</td>
+                    <td>{{ progress.problem.topic }}</td>
+                    <td>
+                        <span class="badge bg-{% if progress.problem.difficulty == 'Easy' %}success{% elif progress.problem.difficulty == 'Medium' %}warning{% else %}danger{% endif %}">
+                            {{ progress.problem.difficulty }}
+                        </span>
+                    </td>
+                    <td>
+                        {% for note in notes_data %}
+                            {% if note.problem == progress.problem %}
+                                <button type="button" class="btn btn-sm btn-info" 
+                                        data-bs-toggle="tooltip" 
+                                        data-bs-placement="top" 
+                                        title="{{ note.note }}">
+                                    <i class="fas fa-sticky-note"></i>
+                                </button>
+                            {% endif %}
+                        {% endfor %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" class="text-center">No problems completed yet.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+// Initialize tooltips
+var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+    return new bootstrap.Tooltip(tooltipTriggerEl);
+});
+</script> 
