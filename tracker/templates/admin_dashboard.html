@@ -1,146 +1,291 @@
 <!-- templates/admin_dashboard.html -->
 {% extends 'base.html' %}
 {% load static %}
+{% load custom_filters %}
 
 {% block content %}
 <div class="container-fluid">
+    {% csrf_token %}
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2>Problem Management</h2>
-        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addProblemModal">
-            <i class="fas fa-plus me-2"></i>Add Problem
-        </button>
+        <div class="d-flex gap-2">
+            <button id="saveChangesBtn" class="btn btn-success">
+                <i class="fas fa-save me-2"></i>Save Changes
+            </button>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addProblemModal">
+                <i class="fas fa-plus me-2"></i>Add Problem
+            </button>
+        </div>
     </div>
 
-    <div class="card">
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-hover">
-                    <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th>Topic</th>
-                            <th>Difficulty</th>
-                            <th>Links</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for problem in problems %}
-                        <tr>
-                            <td>
-                                <input type="text" class="form-control-plaintext editable" 
-                                       value="{{ problem.name }}" data-field="name" data-id="{{ problem.id }}">
-                            </td>
-                            <td>
-                                <input type="text" class="form-control-plaintext editable" 
-                                       value="{{ problem.topic }}" data-field="topic" data-id="{{ problem.id }}">
-                            </td>
-                            <td>
-                                <select class="form-select editable" data-field="difficulty" data-id="{{ problem.id }}">
-                                    <option value="Easy" {% if problem.difficulty == 'Easy' %}selected{% endif %}>Easy</option>
-                                    <option value="Medium" {% if problem.difficulty == 'Medium' %}selected{% endif %}>Medium</option>
-                                    <option value="Hard" {% if problem.difficulty == 'Hard' %}selected{% endif %}>Hard</option>
-                                </select>
-                            </td>
-                            <td>
-                                <div class="d-flex gap-2">
-                                    <input type="url" class="form-control form-control-sm editable" 
-                                           value="{{ problem.youtube_link|default:'' }}" 
-                                           placeholder="YouTube Link"
-                                           data-field="youtube_link" 
-                                           data-id="{{ problem.id }}">
-                                    <input type="url" class="form-control form-control-sm editable" 
-                                           value="{{ problem.practice_link|default:'' }}" 
-                                           placeholder="Practice Link"
-                                           data-field="practice_link" 
-                                           data-id="{{ problem.id }}">
-                                </div>
-                            </td>
-                            <td>
-                                <div class="btn-group">
-                                    <button class="btn btn-sm btn-danger" onclick="deleteProblem({{ problem.id }})">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            <div class="text-end mt-3">
-                <button class="btn btn-primary" onclick="saveAllChanges()">
-                    <i class="fas fa-save me-2"></i>Save All Changes
-                </button>
+    <!-- Search Bar with Suggestions -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="search-container position-relative">
+                <div class="input-group">
+                    <span class="input-group-text">
+                        <i class="fas fa-search"></i>
+                    </span>
+                    <input type="text" class="form-control" id="problemSearch" placeholder="Search problems...">
+                </div>
+                <div id="searchSuggestions" class="position-absolute w-100 mt-1 d-none">
+                    <!-- Suggestions will be populated here -->
+                </div>
             </div>
         </div>
+    </div>
+
+    <!-- Grouped Problems -->
+    <div class="accordion" id="problemsAccordion">
+        {% for topic, topic_data in grouped_problems.items %}
+        <div class="accordion-item">
+            <h2 class="accordion-header">
+                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#topic{{ forloop.counter }}">
+                    {{ topic }}
+                </button>
+            </h2>
+            <div id="topic{{ forloop.counter }}" class="accordion-collapse collapse show">
+                <div class="accordion-body">
+                    {% for difficulty, problems in topic_data.difficulties.items %}
+                    {% if problems %}
+                    <div class="difficulty-section mb-4">
+                        <h5 class="text-{{ difficulty|lower|default:'secondary' }}">
+                            {{ difficulty }}
+                        </h5>
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Name</th>
+                                        <th scope="col">Links</th>
+                                        <th scope="col">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for problem in problems %}
+                                    <tr class="problem-item" data-id="{{ problem.id }}" data-name="{{ problem.name }}" data-topic="{{ problem.topic }}" data-difficulty="{{ problem.difficulty }}">
+                                        <td>
+                                            <textarea class="form-control form-control-sm editable problem-name-input" 
+                                                   data-field="name" data-id="{{ problem.id }}" rows="1">{{ problem.name }}</textarea>
+                                        </td>
+                                        <td>
+                                            <div class="links-column">
+                                                <div class="link-icon {% if problem.youtube_link %}has-link{% endif %}" 
+                                                     onclick="editLink(this, 'youtube_link', '{{ problem.id }}')">
+                                                    <i class="fab fa-youtube"></i>
+                                                    <div class="link-tooltip">
+                                                        {% if problem.youtube_link %}
+                                                            {{ problem.youtube_link }}
+                                                        {% else %}
+                                                            Add reference link
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                                <div class="link-icon {% if problem.practice_link %}has-link{% endif %}"
+                                                     onclick="editLink(this, 'practice_link', '{{ problem.id }}')">
+                                                    <i class="fas fa-code"></i>
+                                                    <div class="link-tooltip">
+                                                        {% if problem.practice_link %}
+                                                            {{ problem.practice_link }}
+                                                        {% else %}
+                                                            Add practice link
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <button class="btn btn-sm btn-danger delete-problem" data-id="{{ problem.id }}">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
     </div>
 </div>
 
 <!-- Add Problem Modal -->
-<div class="modal fade" id="addProblemModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Add New Problem</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <form id="addProblemForm" method="POST" action="{% url 'add_problem' %}">
-                    {% csrf_token %}
-                    <div class="mb-3">
-                        <label class="form-label">Problem Name</label>
-                        <input type="text" class="form-control" name="name" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Topic</label>
-                        <input type="text" class="form-control" name="topic" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Difficulty</label>
-                        <select class="form-select" name="difficulty" required>
-                            <option value="Easy">Easy</option>
-                            <option value="Medium">Medium</option>
-                            <option value="Hard">Hard</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">YouTube Link (Optional)</label>
-                        <input type="url" class="form-control" name="youtube_link" placeholder="Enter YouTube video URL">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Practice Link (Optional)</label>
-                        <input type="url" class="form-control" name="practice_link" placeholder="Enter practice problem URL">
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="submit" form="addProblemForm" class="btn btn-primary">Add Problem</button>
-            </div>
+{% include "modals/add_problem_modal.html" %}
+
+<!-- Link Edit Modal -->
+<div class="link-edit-modal" id="linkEditModal">
+    <div class="link-edit-content">
+        <div class="link-edit-header">
+            <h5 class="modal-title">Edit Link</h5>
+            <button type="button" class="link-edit-close" onclick="closeLinkEdit()">&times;</button>
+        </div>
+        <input type="text" class="form-control mb-3" id="linkEditInput">
+        <input type="hidden" id="linkEditType">
+        <input type="hidden" id="linkEditId">
+        <div class="d-flex justify-content-end gap-2">
+            <button class="btn btn-secondary" onclick="closeLinkEdit()">Cancel</button>
+            <button class="btn btn-primary" onclick="saveLinkEdit()">Save</button>
         </div>
     </div>
 </div>
+
 {% endblock %}
 
 {% block extra_js %}
 <script>
 let changedProblems = new Set();
+const saveChangesBtn = document.getElementById('saveChangesBtn');
+
+// Auto-resize textareas
+function autoResizeTextarea(textarea) {
+    textarea.style.height = 'auto';
+    textarea.style.height = (textarea.scrollHeight) + 'px';
+}
+
+// Initialize all textareas
+document.querySelectorAll('.problem-name-input').forEach(textarea => {
+    autoResizeTextarea(textarea);
+    textarea.addEventListener('input', function() {
+        autoResizeTextarea(this);
+    });
+});
 
 // Handle editable fields
 document.querySelectorAll('.editable').forEach(field => {
     field.addEventListener('change', function() {
         changedProblems.add(this.dataset.id);
         this.classList.add('border-warning');
+        updateSaveButtonState();
     });
 });
 
+function updateSaveButtonState() {
+    if (changedProblems.size > 0) {
+        saveChangesBtn.classList.add('btn-warning');
+        saveChangesBtn.innerHTML = `<i class="fas fa-save me-2"></i>Save Changes (${changedProblems.size})`;
+    } else {
+        saveChangesBtn.classList.remove('btn-warning');
+        saveChangesBtn.innerHTML = '<i class="fas fa-save me-2"></i>Save Changes';
+    }
+}
+
+// Search functionality with suggestions
+const searchInput = document.getElementById('problemSearch');
+const suggestionsBox = document.getElementById('searchSuggestions');
+let searchTimeout;
+
+searchInput.addEventListener('input', function() {
+    clearTimeout(searchTimeout);
+    const query = this.value.toLowerCase();
+    
+    if (!query) {
+        suggestionsBox.innerHTML = '';
+        suggestionsBox.classList.add('d-none');
+        return;
+    }
+
+    // Get all problem items
+    const problems = Array.from(document.querySelectorAll('.problem-item'))
+        .map(item => ({
+            id: item.dataset.id,
+            name: item.dataset.name,
+            topic: item.dataset.topic,
+            difficulty: item.dataset.difficulty,
+            element: item
+        }))
+        .filter(problem => 
+            problem.name.toLowerCase().includes(query) ||
+            problem.topic.toLowerCase().includes(query)
+        )
+        .slice(0, 5);
+
+    // Clear and populate suggestions
+    suggestionsBox.innerHTML = '';
+    
+    if (problems.length > 0) {
+        problems.forEach(problem => {
+            const div = document.createElement('div');
+            div.className = 'suggestion-item p-2 border-bottom';
+            div.innerHTML = `
+                <div class="d-flex justify-content-between align-items-center">
+                    <span>${problem.name}</span>
+                    <div>
+                        <span class="badge bg-secondary me-1">${problem.topic}</span>
+                        <span class="badge bg-${getDifficultyColor(problem.difficulty)}">${problem.difficulty}</span>
+                    </div>
+                </div>
+            `;
+            
+            div.addEventListener('click', () => {
+                // Find the accordion item containing this problem
+                const accordionItem = problem.element.closest('.accordion-item');
+                const accordionButton = accordionItem.querySelector('.accordion-button');
+                const accordionContent = accordionItem.querySelector('.accordion-collapse');
+                
+                // Expand the accordion if it's collapsed
+                if (accordionButton.classList.contains('collapsed')) {
+                    new bootstrap.Collapse(accordionContent).show();
+                }
+                
+                // Wait for accordion animation to complete before scrolling
+                setTimeout(() => {
+                    problem.element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    problem.element.classList.add('highlight');
+                    setTimeout(() => problem.element.classList.remove('highlight'), 2000);
+                }, 350);
+                
+                // Clear search
+                searchInput.value = '';
+                suggestionsBox.classList.add('d-none');
+            });
+            
+            suggestionsBox.appendChild(div);
+        });
+        
+        suggestionsBox.classList.remove('d-none');
+    } else {
+        suggestionsBox.classList.add('d-none');
+    }
+});
+
+// Close suggestions when clicking outside
+document.addEventListener('click', (e) => {
+    if (!searchInput.contains(e.target) && !suggestionsBox.contains(e.target)) {
+        suggestionsBox.classList.add('d-none');
+    }
+});
+
+function getDifficultyColor(difficulty) {
+    const lowercaseDifficulty = difficulty.toLowerCase();
+    switch (lowercaseDifficulty) {
+        case 'easy': return 'easy';
+        case 'medium': return 'medium';
+        case 'hard': return 'hard';
+        default: return 'secondary';
+    }
+}
+
+// Attach save changes event to the button
+saveChangesBtn.addEventListener('click', saveAllChanges);
+
 function saveAllChanges() {
+    if (changedProblems.size === 0) {
+        showAlert('No changes to save', 'info');
+        return;
+    }
+
     const updates = Array.from(changedProblems).map(problemId => {
         const fields = document.querySelectorAll(`[data-id="${problemId}"]`);
         const data = {};
         fields.forEach(field => {
-            data[field.dataset.field] = field.value;
+            if (field.dataset.field) {  // Only include fields with data-field attribute
+                data[field.dataset.field] = field.value;
+            }
         });
         return { id: problemId, ...data };
     });
@@ -153,17 +298,27 @@ function saveAllChanges() {
         },
         body: JSON.stringify({ problems: updates })
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.json();
+    })
     .then(data => {
         if (data.success) {
             changedProblems.clear();
             document.querySelectorAll('.editable').forEach(field => {
                 field.classList.remove('border-warning');
             });
+            updateSaveButtonState();
             showAlert('Changes saved successfully', 'success');
         } else {
-            showAlert('Error saving changes', 'danger');
+            showAlert(data.error || 'Error saving changes', 'danger');
         }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showAlert('Error saving changes: ' + error.message, 'danger');
     });
 }
 
@@ -188,12 +343,408 @@ function deleteProblem(problemId) {
 
 function showAlert(message, type) {
     const alertDiv = document.createElement('div');
-    alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed top-0 end-0 m-3`;
     alertDiv.innerHTML = `
         ${message}
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     `;
-    document.querySelector('.messages').appendChild(alertDiv);
+    document.body.appendChild(alertDiv);
+    setTimeout(() => alertDiv.remove(), 3000);
 }
+
+// Handle delete buttons
+document.querySelectorAll('.delete-problem').forEach(button => {
+    button.addEventListener('click', function() {
+        const problemId = this.dataset.id;
+        deleteProblem(problemId);
+    });
+});
+
+function editLink(element, type, problemId) {
+    const modal = document.getElementById('linkEditModal');
+    const input = document.getElementById('linkEditInput');
+    const typeInput = document.getElementById('linkEditType');
+    const idInput = document.getElementById('linkEditId');
+    
+    // Get current link value
+    const currentLink = element.querySelector('.link-tooltip').textContent.trim();
+    input.value = currentLink === 'Add reference link' || currentLink === 'Add practice link' ? '' : currentLink;
+    
+    typeInput.value = type;
+    idInput.value = problemId;
+    
+    modal.classList.add('show');
+    input.focus();
+}
+
+function closeLinkEdit() {
+    const modal = document.getElementById('linkEditModal');
+    modal.classList.remove('show');
+}
+
+function saveLinkEdit() {
+    const input = document.getElementById('linkEditInput');
+    const type = document.getElementById('linkEditType').value;
+    const problemId = document.getElementById('linkEditId').value;
+    
+    // Find the editable input field and update it
+    const field = document.querySelector(`[data-id="${problemId}"][data-field="${type}"]`);
+    if (field) {
+        field.value = input.value;
+        field.dispatchEvent(new Event('change'));
+        
+        // Update the icon state and tooltip
+        const icon = document.querySelector(`.link-icon[onclick*="${type}"][onclick*="${problemId}"]`);
+        if (icon) {
+            if (input.value) {
+                icon.classList.add('has-link');
+                icon.querySelector('.link-tooltip').textContent = input.value;
+            } else {
+                icon.classList.remove('has-link');
+                icon.querySelector('.link-tooltip').textContent = 
+                    type === 'youtube_link' ? 'Add reference link' : 'Add practice link';
+            }
+        }
+    }
+    
+    closeLinkEdit();
+}
+
+// Close modal when clicking outside
+document.getElementById('linkEditModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeLinkEdit();
+    }
+});
+
+// Handle Escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeLinkEdit();
+    }
+});
 </script>
+
+<style>
+/* Search Container */
+.search-container {
+    z-index: 1000;
+}
+
+#searchSuggestions {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 0.25rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.suggestion-item {
+    cursor: pointer;
+    transition: background-color 0.2s;
+    color: var(--text-primary);
+}
+
+.suggestion-item:hover {
+    background-color: var(--bg-hover);
+}
+
+/* Accordion Styling */
+.accordion-item {
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-color);
+}
+
+.accordion-button {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+}
+
+.accordion-button:not(.collapsed) {
+    background-color: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+.accordion-button::after {
+    filter: var(--icon-filter);
+}
+
+/* Table Styling */
+.table {
+    color: var(--text-primary);
+    border-collapse: collapse;
+}
+
+.table thead th {
+    background-color: var(--bg-secondary);
+    border-bottom: 2px solid var(--border-color);
+    padding: 0.75rem;
+    vertical-align: middle;
+}
+
+.table thead th:nth-child(1) {  /* Name column header */
+    padding-left: 1rem;
+}
+
+.table thead th:nth-child(2) {  /* Links column header */
+    text-align: center;
+    padding-left: 0;
+    padding-right: 0;
+}
+
+.table thead th:nth-child(3) {  /* Actions column header */
+    text-align: center;
+    padding-left: 0;
+    padding-right: 0;
+}
+
+.table tbody tr:hover {
+    background-color: var(--bg-hover);
+}
+
+.table td {
+    vertical-align: middle;
+    padding: 0.75rem;
+}
+
+.table td:first-child {
+    width: 60%;
+    max-width: 0;
+    padding-left: 1rem;
+}
+
+.table td:nth-child(2) {  /* Links column */
+    width: 25%;
+    padding: 0.75rem 0;
+}
+
+.table td:last-child {  /* Actions column */
+    width: 15%;
+    text-align: center;
+    padding: 0.75rem 0;
+}
+
+/* Links styling */
+.links-column {
+    display: flex;
+    gap: 2rem;  /* Space between icons */
+    justify-content: center;  /* Center the icons */
+    align-items: center;
+    margin: 0;
+}
+
+.link-icon {
+    cursor: pointer;
+    font-size: 1.2rem;
+    color: var(--text-primary);
+    opacity: 0.7;
+    transition: opacity 0.2s, color 0.2s;
+    position: relative;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.link-icon:hover {
+    opacity: 1;
+    color: var(--accent-color);
+}
+
+.link-icon.has-link {
+    opacity: 1;
+    color: var(--accent-color);
+}
+
+/* Tooltip styles */
+.link-tooltip {
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.875rem;
+    white-space: nowrap;
+    display: none;
+    border: 1px solid var(--border-color);
+    z-index: 1000;
+}
+
+.link-icon:hover .link-tooltip {
+    display: block;
+}
+
+/* Link input modal styles */
+.link-edit-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1050;
+    align-items: center;
+    justify-content: center;
+}
+
+.link-edit-modal.show {
+    display: flex;
+}
+
+.link-edit-content {
+    background-color: var(--bg-primary);
+    padding: 1rem;
+    border-radius: 0.5rem;
+    width: 90%;
+    max-width: 500px;
+    border: 1px solid var(--border-color);
+}
+
+.link-edit-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.link-edit-close {
+    background: none;
+    border: none;
+    color: var(--text-primary);
+    font-size: 1.5rem;
+    cursor: pointer;
+}
+
+/* Form Controls */
+.form-control, .form-control-plaintext {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    border-color: var(--border-color);
+}
+
+.form-control:focus, .form-control-plaintext:focus {
+    background-color: var(--bg-hover);
+    color: var(--text-primary);
+    border-color: var(--accent-color);
+}
+
+/* Difficulty Sections */
+.difficulty-section {
+    padding: 1rem;
+    border-radius: 0.25rem;
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-color);
+}
+
+/* Highlight Animation */
+.highlight {
+    animation: highlight 2s;
+}
+
+@keyframes highlight {
+    0% { background-color: var(--highlight-color); }
+    100% { background-color: transparent; }
+}
+
+/* Dark Mode Specific */
+[data-theme="dark"] {
+    --bg-primary: #1a1a1a;
+    --bg-secondary: #2d2d2d;
+    --bg-hover: #363636;
+    --text-primary: #e0e0e0;
+    --border-color: #404040;
+    --accent-color: #0d6efd;
+    --highlight-color: rgba(255, 193, 7, 0.2);
+    --icon-filter: invert(1);
+}
+
+[data-theme="dark"] .form-control-plaintext {
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 0.25rem;
+    padding: 0.375rem 0.75rem;
+}
+
+[data-theme="dark"] .form-control-plaintext:hover {
+    background-color: var(--bg-hover);
+}
+
+[data-theme="dark"] .form-control-plaintext:focus {
+    background-color: var(--bg-hover);
+    border-color: var(--accent-color);
+    outline: none;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+/* Light Mode Specific */
+[data-theme="light"] {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f8f9fa;
+    --bg-hover: #f0f0f0;
+    --text-primary: #212529;
+    --border-color: #dee2e6;
+    --accent-color: #0d6efd;
+    --highlight-color: #fff3cd;
+    --icon-filter: none;
+}
+
+/* Difficulty colors for dark mode */
+[data-theme="dark"] .text-easy,
+[data-theme="dark"] h5.text-easy {
+    color: #98ff98 !important; /* Light green */
+}
+
+[data-theme="dark"] .text-medium,
+[data-theme="dark"] h5.text-medium {
+    color: #ffd700 !important; /* Gold */
+}
+
+[data-theme="dark"] .text-hard,
+[data-theme="dark"] h5.text-hard {
+    color: #ff6b6b !important; /* Light red */
+}
+
+[data-theme="dark"] .difficulty-section h5 {
+    color: #e0e0e0 !important; /* Light gray for default difficulty color */
+}
+
+/* Badge colors for dark mode */
+[data-theme="dark"] .badge.bg-easy {
+    background-color: #2d5a27 !important; /* Darker green */
+    color: #98ff98 !important;
+}
+
+[data-theme="dark"] .badge.bg-medium {
+    background-color: #665e00 !important; /* Darker yellow */
+    color: #ffd700 !important;
+}
+
+[data-theme="dark"] .badge.bg-hard {
+    background-color: #662222 !important; /* Darker red */
+    color: #ff6b6b !important;
+}
+
+[data-theme="dark"] .badge.bg-secondary {
+    background-color: #495057 !important;
+    color: #e0e0e0 !important;
+}
+
+/* Problem name input styling */
+.problem-name-input {
+    min-height: 38px;
+    height: auto;
+    white-space: normal;
+    word-wrap: break-word;
+    resize: none;
+    overflow-y: hidden;
+    padding: 0.5rem;
+    margin: -0.5rem 0;
+}
+</style>
 {% endblock %}
