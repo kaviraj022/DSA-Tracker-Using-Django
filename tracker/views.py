@@ -93,8 +93,39 @@ from .models import Problem, UserNote, UserProgress
 @login_required
 @admin_required
 def admin_dashboard(request):
-    problems = Problem.objects.all()
-    return render(request, 'admin_dashboard.html', {'problems': problems})
+    problems = Problem.objects.all().order_by('topic', 'difficulty')
+    
+    # Group problems by topic and difficulty
+    grouped_problems = {}
+    topics = set()
+    difficulties = set()
+    
+    for problem in problems:
+        topic = problem.topic
+        difficulty = problem.difficulty
+        topics.add(topic)
+        difficulties.add(difficulty)
+        
+        if topic not in grouped_problems:
+            grouped_problems[topic] = {
+                'difficulties': {},
+                'total': 0
+            }
+        
+        if difficulty not in grouped_problems[topic]['difficulties']:
+            grouped_problems[topic]['difficulties'][difficulty] = []
+        
+        grouped_problems[topic]['difficulties'][difficulty].append(problem)
+        grouped_problems[topic]['total'] += 1
+    
+    context = {
+        'grouped_problems': grouped_problems,
+        'topics': sorted(list(topics)),
+        'difficulties': sorted(list(difficulties)),
+        'all_problems': problems  # For search functionality
+    }
+    
+    return render(request, 'admin_dashboard.html', context)
 
 @login_required
 @user_required
@@ -135,17 +166,20 @@ def user_dashboard(request):
 @admin_required
 def add_problem(request):
     if request.method == 'POST':
-        topic = request.POST.get('topic')
-        difficulty = request.POST.get('difficulty')
-        name = request.POST.get('name')
-        youtube_link = request.POST.get('youtube_link') or None
-        practice_link = request.POST.get('practice_link') or None
-
-        if not all([topic, difficulty, name]):
-            messages.error(request, 'Please fill in all required fields.')
-            return redirect('admin_dashboard')
-
         try:
+            data = json.loads(request.body)
+            topic = data.get('topic')
+            difficulty = data.get('difficulty')
+            name = data.get('name')
+            youtube_link = data.get('youtube_link') or None
+            practice_link = data.get('practice_link') or None
+
+            if not all([topic, difficulty, name]):
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Please fill in all required fields.'
+                })
+
             Problem.objects.create(
                 topic=topic,
                 difficulty=difficulty,
@@ -153,14 +187,24 @@ def add_problem(request):
                 youtube_link=youtube_link,
                 practice_link=practice_link
             )
-            messages.success(request, 'Problem added successfully.')
+            
+            return JsonResponse({'success': True})
+            
+        except json.JSONDecodeError:
+            return JsonResponse({
+                'success': False,
+                'error': 'Invalid request format.'
+            })
         except Exception as e:
-            messages.error(request, f'Error adding problem: {str(e)}')
-        
-        return redirect('admin_dashboard')
+            return JsonResponse({
+                'success': False,
+                'error': str(e)
+            })
 
-    # GET requests should redirect to admin dashboard
-    return redirect('admin_dashboard')
+    return JsonResponse({
+        'success': False,
+        'error': 'Invalid request method.'
+    })
 
 from django.shortcuts import get_object_or_404
 
@@ -377,14 +421,53 @@ def update_problems(request):
             data = json.loads(request.body)
             problems = data.get('problems', [])
             
+            if not problems:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'No problems provided for update'
+                })
+            
             for problem_data in problems:
-                problem_id = problem_data.pop('id')
-                Problem.objects.filter(id=problem_id).update(**problem_data)
+                problem_id = problem_data.pop('id', None)
+                if not problem_id:
+                    return JsonResponse({
+                        'success': False,
+                        'error': 'Problem ID is missing'
+                    })
+                
+                try:
+                    problem = Problem.objects.get(id=problem_id)
+                    for field, value in problem_data.items():
+                        setattr(problem, field, value)
+                    problem.save()
+                except Problem.DoesNotExist:
+                    return JsonResponse({
+                        'success': False,
+                        'error': f'Problem with ID {problem_id} not found'
+                    })
+                except Exception as e:
+                    return JsonResponse({
+                        'success': False,
+                        'error': f'Error updating problem {problem_id}: {str(e)}'
+                    })
             
             return JsonResponse({'success': True})
+            
+        except json.JSONDecodeError:
+            return JsonResponse({
+                'success': False,
+                'error': 'Invalid JSON data'
+                })
         except Exception as e:
-            return JsonResponse({'success': False, 'error': str(e)})
-    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+            return JsonResponse({
+                'success': False,
+                'error': f'Server error: {str(e)}'
+            })
+            
+    return JsonResponse({
+        'success': False,
+        'error': 'Invalid request method'
+    })
 
 @login_required
 @admin_required

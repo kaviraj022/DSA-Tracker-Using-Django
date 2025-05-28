@@ -79,7 +79,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'dsa_tracker',        
         'USER': 'root',               
-        'PASSWORD': 'TMFouzul@2005',
+        'PASSWORD': 'Kavi#8#0#9#8#',
         'HOST': 'localhost',
         'PORT': '3306',
         'OPTIONS': {
