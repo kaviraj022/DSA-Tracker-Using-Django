@@ -1,15 +1,355 @@
 <!-- templates/user_dashboard.html -->
-<h1>User Dashboard</h1>
-<p>Welcome, {{ request.session.username }}!</p>
+{% extends 'base.html' %}
+{% load static %}
 
-<h2>All Problems</h2>
-<ul>
-  {% for problem in problems %}
-    <li>
-      {{ problem.name }} ({{ problem.topic }} - {{ problem.difficulty }})
-      <!-- You can show notes and progress for each problem -->
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <nav class="col-md-2 d-none d-md-block bg-light sidebar">
+            <div class="sidebar-sticky">
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#problems">
+                            Problems
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#progress">
+                            My Progress
+                        </a>
     </li>
-  {% empty %}
-    <li>No problems available.</li>
+                </ul>
+            </div>
+        </nav>
+
+        <!-- Main content -->
+        <main role="main" class="col-md-10 ml-sm-auto px-4">
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                <h1>Welcome, {{ request.session.username }}!</h1>
+            </div>
+
+            {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">
+                    {{ message }}
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Progress Overview -->
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="stat-card">
+                        <h6 class="stat-card-title">Total Problems</h6>
+                        <p class="stat-card-value">{{ problems_data|length }}</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="stat-card">
+                        <h6 class="stat-card-title">Problems Solved</h6>
+                        <p class="stat-card-value">{{ completed_problems }}</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="stat-card">
+                        <h6 class="stat-card-title">Completion Rate</h6>
+                        <p class="stat-card-value">{{ completion_rate|floatformat:1 }}%</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Problems List -->
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Problems List</h5>
+                    <div class="d-flex gap-2">
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                <i class="fas fa-search"></i>
+                            </span>
+                            <input type="text" class="form-control" id="problemSearch" placeholder="Search problems...">
+                        </div>
+                        <select class="form-select" id="topicFilter">
+                            <option value="">All Topics</option>
+                            {% for topic in topics %}
+                            <option value="{{ topic }}">{{ topic }}</option>
+                            {% endfor %}
+                        </select>
+                        <select class="form-select" id="difficultyFilter">
+                            <option value="">All Difficulties</option>
+                            <option value="Easy">Easy</option>
+                            <option value="Medium">Medium</option>
+                            <option value="Hard">Hard</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="problemsTable">
+                            <thead>
+                                <tr>
+                                    <th>Status</th>
+                                    <th>Name</th>
+                                    <th>Topic</th>
+                                    <th>Difficulty</th>
+                                    <th>Links</th>
+                                    <th>Notes</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in problems_data %}
+                                <tr data-topic="{{ item.problem.topic }}" data-difficulty="{{ item.problem.difficulty }}">
+                                    <td>
+                                        {% if item.progress.is_completed %}
+                                        <i class="fas fa-check-circle text-success"></i>
+                                        {% else %}
+                                        <i class="far fa-circle text-muted"></i>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ item.problem.name }}</td>
+                                    <td>{{ item.problem.topic }}</td>
+                                    <td>
+                                        <span class="badge bg-{% if item.problem.difficulty == 'Easy' %}success{% elif item.problem.difficulty == 'Medium' %}warning{% else %}danger{% endif %}">
+                                            {{ item.problem.difficulty }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if item.problem.youtube_link %}
+                                        <a href="{{ item.problem.youtube_link }}" target="_blank" class="btn btn-sm btn-danger">
+                                            <i class="fab fa-youtube"></i>
+                                        </a>
+                                        {% endif %}
+                                        {% if item.problem.practice_link %}
+                                        <a href="{{ item.problem.practice_link }}" target="_blank" class="btn btn-sm btn-primary">
+                                            Practice
+                                        </a>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <button type="button" class="btn btn-sm {% if item.note %}btn-info{% else %}btn-outline-info{% endif %}"
+                                                onclick="openNoteModal({{ item.problem.id }}, '{{ item.note.note|default:''|escapejs }}')">
+                                            {% if item.note %}
+                                            <i class="fas fa-edit"></i>
+                                            {% else %}
+                                            <i class="fas fa-plus"></i>
+                                            {% endif %}
+                                            Note
+                                        </button>
+                                    </td>
+                                    <td>
+                                        <button type="button" 
+                                                class="btn btn-sm {% if item.progress.is_completed %}btn-success{% else %}btn-outline-success{% endif %}"
+                                                onclick="toggleProgress({{ item.problem.id }}, {% if item.progress.is_completed %}false{% else %}true{% endif %})">
+                                            {% if item.progress.is_completed %}
+                                            Completed
+                                            {% else %}
+                                            Mark Complete
+                                            {% endif %}
+                                        </button>
+                                    </td>
+                                </tr>
   {% endfor %}
-</ul>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Progress Charts -->
+            <div id="progress" class="mt-5">
+                <h2>My Progress</h2>
+                <div class="row">
+                    <div class="col-md-6">
+                        <canvas id="progressChart"></canvas>
+                    </div>
+                    <div class="col-md-6">
+                        <canvas id="topicProgressChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<!-- Note Modal -->
+<div class="modal fade" id="noteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Problem Note</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="noteForm">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <textarea class="form-control" id="noteText" rows="5" placeholder="Add your notes here..."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveNote()">Save Note</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    let currentProblemId = null;
+
+    // Problem filtering
+    document.getElementById('problemSearch').addEventListener('input', filterProblems);
+    document.getElementById('topicFilter').addEventListener('change', filterProblems);
+    document.getElementById('difficultyFilter').addEventListener('change', filterProblems);
+
+    function filterProblems() {
+        const searchTerm = document.getElementById('problemSearch').value.toLowerCase();
+        const topicFilter = document.getElementById('topicFilter').value;
+        const difficultyFilter = document.getElementById('difficultyFilter').value;
+        
+        document.querySelectorAll('#problemsTable tbody tr').forEach(row => {
+            const topic = row.dataset.topic;
+            const difficulty = row.dataset.difficulty;
+            const text = row.textContent.toLowerCase();
+            
+            const matchesSearch = searchTerm === '' || text.includes(searchTerm);
+            const matchesTopic = topicFilter === '' || topic === topicFilter;
+            const matchesDifficulty = difficultyFilter === '' || difficulty === difficultyFilter;
+            
+            row.style.display = matchesSearch && matchesTopic && matchesDifficulty ? '' : 'none';
+        });
+    }
+
+    function openNoteModal(problemId, note = '') {
+        currentProblemId = problemId;
+        document.getElementById('noteText').value = note;
+        new bootstrap.Modal(document.getElementById('noteModal')).show();
+    }
+
+    function saveNote() {
+        const note = document.getElementById('noteText').value;
+        
+        fetch(`/save_note/${currentProblemId}/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: JSON.stringify({ note: note })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            }
+        });
+    }
+
+    function toggleProgress(problemId, completed) {
+        fetch(`/toggle_progress/${problemId}/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: JSON.stringify({ completed: completed })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            }
+        });
+    }
+
+    // Chart initialization
+    document.addEventListener('DOMContentLoaded', function() {
+        // Progress pie chart
+        const progressCtx = document.getElementById('progressChart').getContext('2d');
+        new Chart(progressCtx, {
+            type: 'pie',
+            data: {
+                labels: ['Completed', 'Remaining'],
+                datasets: [{
+                    data: [
+                        {{ completed_problems }},
+                        {{ remaining_problems }}
+                    ],
+                    backgroundColor: ['#28a745', '#dee2e6']
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Overall Progress'
+                    }
+                }
+            }
+        });
+
+        // Topic progress chart
+        const topicCtx = document.getElementById('topicProgressChart').getContext('2d');
+        const topics = [...new Set(Array.from(document.querySelectorAll('td:nth-child(3)')).map(td => td.textContent))];
+        const completedByTopic = topics.map(topic => {
+            const topicRows = Array.from(document.querySelectorAll('tr')).filter(tr => 
+                tr.children[2] && tr.children[2].textContent === topic
+            );
+            const completedRows = topicRows.filter(tr => 
+                tr.children[0].querySelector('.fa-check-circle')
+            );
+            return completedRows.length;
+        });
+        const totalByTopic = topics.map(topic => 
+            Array.from(document.querySelectorAll('td:nth-child(3)')).filter(td => td.textContent === topic).length
+        );
+
+        new Chart(topicCtx, {
+            type: 'bar',
+            data: {
+                labels: topics,
+                datasets: [{
+                    label: 'Completed',
+                    data: completedByTopic,
+                    backgroundColor: 'rgba(40, 167, 69, 0.5)',
+                    borderColor: 'rgba(40, 167, 69, 1)',
+                    borderWidth: 1
+                },
+                {
+                    label: 'Total',
+                    data: totalByTopic,
+                    backgroundColor: 'rgba(222, 226, 230, 0.5)',
+                    borderColor: 'rgba(222, 226, 230, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1
+                        }
+                    }
+                },
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Progress by Topic'
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}
+{% endblock %}
