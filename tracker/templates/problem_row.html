@@ -1,0 +1,41 @@
+<td>
+    {% if item.progress.is_completed %}
+    <i class="fas fa-check-circle text-success"></i>
+    {% else %}
+    <i class="far fa-circle text-muted"></i>
+    {% endif %}
+</td>
+<td>{{ item.problem.name }}</td>
+<td>
+    {% if item.problem.youtube_link %}
+    <a href="{{ item.problem.youtube_link }}" target="_blank" class="btn btn-sm btn-danger">
+        <i class="fab fa-youtube"></i>
+    </a>
+    {% endif %}
+    {% if item.problem.practice_link %}
+    <a href="{{ item.problem.practice_link }}" target="_blank" class="btn btn-sm btn-primary">
+        <i class="fas fa-code"></i>
+    </a>
+    {% endif %}
+</td>
+<td>
+    <button type="button" class="btn btn-sm {% if item.note %}btn-info{% else %}btn-outline-info{% endif %}"
+            onclick="openNoteModal({{ item.problem.id }}, '{{ item.note.note|default:''|escapejs }}')">
+        {% if item.note %}
+        <i class="fas fa-edit"></i>
+        {% else %}
+        <i class="fas fa-plus"></i>
+        {% endif %}
+    </button>
+</td>
+<td>
+    <button type="button" 
+            class="btn btn-sm {% if item.progress.is_completed %}btn-success{% else %}btn-outline-success{% endif %}"
+            onclick="toggleProgress({{ item.problem.id }}, {% if item.progress.is_completed %}false{% else %}true{% endif %})">
+        {% if item.progress.is_completed %}
+        <i class="fas fa-check"></i>
+        {% else %}
+        <i class="fas fa-check"></i>
+        {% endif %}
+    </button>
+</td> 

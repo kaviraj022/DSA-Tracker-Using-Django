@@ -131,13 +131,13 @@ def admin_dashboard(request):
 @user_required
 def user_dashboard(request):
     user_id = request.session['user_id']
-    problems = Problem.objects.all()
+    problems = Problem.objects.all().order_by('topic', 'difficulty')
     user_notes = UserNote.objects.filter(user_id=user_id)
     user_progress = UserProgress.objects.filter(user_id=user_id)
     
     # Create dictionaries for quick lookups
-    notes_dict = {note.problem_id: note for note in user_notes}
-    progress_dict = {prog.problem_id: prog for prog in user_progress}
+    notes_dict = {note.problem_id: note.note for note in user_notes}
+    progress_dict = {prog.problem_id: prog.is_completed for prog in user_progress}
     
     # Calculate statistics
     total_problems = problems.count()
@@ -145,20 +145,37 @@ def user_dashboard(request):
     remaining_problems = total_problems - completed_problems
     completion_rate = (completed_problems / total_problems * 100) if total_problems > 0 else 0
     
-    # Prepare problems with their associated data
-    problems_data = []
+    # Group problems by topic and difficulty
+    grouped_problems = {}
     for problem in problems:
+        topic = problem.topic
+        difficulty = problem.difficulty
+        
+        if topic not in grouped_problems:
+            grouped_problems[topic] = {
+                'difficulties': {},
+                'total': 0
+            }
+        
+        if difficulty not in grouped_problems[topic]['difficulties']:
+            grouped_problems[topic]['difficulties'][difficulty] = []
+            
         problem_data = {
-            'problem': problem,
-            'note': notes_dict.get(problem.id),
-            'progress': progress_dict.get(problem.id, {'is_completed': False})
+            'id': problem.id,
+            'name': problem.name,
+            'difficulty': problem.difficulty,
+            'youtube_link': problem.youtube_link,
+            'practice_link': problem.practice_link,
+            'is_solved': progress_dict.get(problem.id, False),
+            'note': notes_dict.get(problem.id, '')
         }
-        problems_data.append(problem_data)
+        grouped_problems[topic]['difficulties'][difficulty].append(problem_data)
+        grouped_problems[topic]['total'] += 1
     
     return render(request, 'user_dashboard.html', {
-        'problems_data': problems_data,
-        'completed_problems': completed_problems,
-        'remaining_problems': remaining_problems,
+        'grouped_problems': grouped_problems,
+        'total_problems': total_problems,
+        'solved_problems': completed_problems,
         'completion_rate': completion_rate
     })
 
@@ -290,7 +307,22 @@ def toggle_progress(request, problem_id):
             defaults={'is_completed': completed}
         )
         
-        return JsonResponse({'success': True})
+        # Get updated statistics
+        total_problems = Problem.objects.count()
+        solved_problems = UserProgress.objects.filter(
+            user_id=user_id,
+            is_completed=True
+        ).count()
+        completion_rate = (solved_problems / total_problems * 100) if total_problems > 0 else 0
+        
+        return JsonResponse({
+            'success': True,
+            'data': {
+                'total_problems': total_problems,
+                'solved_problems': solved_problems,
+                'completion_rate': round(completion_rate, 1)
+            }
+        })
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
 
@@ -532,3 +564,35 @@ def admin_users(request):
         })
     
     return render(request, 'admin_users.html', {'users': user_data})
+
+@login_required
+@user_required
+def user_progress_view(request):
+    user_id = request.session['user_id']
+    problems = Problem.objects.all()
+    user_progress = UserProgress.objects.filter(user_id=user_id)
+    
+    # Calculate statistics
+    total_problems = problems.count()
+    completed_problems = user_progress.filter(is_completed=True).count()
+    remaining_problems = total_problems - completed_problems
+    completion_rate = (completed_problems / total_problems * 100) if total_problems > 0 else 0
+    
+    # Calculate topic-wise progress
+    topic_progress = {}
+    for problem in problems:
+        if problem.topic not in topic_progress:
+            topic_progress[problem.topic] = {
+                'total': 0,
+                'completed': 0
+            }
+        topic_progress[problem.topic]['total'] += 1
+        if user_progress.filter(problem=problem, is_completed=True).exists():
+            topic_progress[problem.topic]['completed'] += 1
+    
+    return render(request, 'user_progress.html', {
+        'completed_problems': completed_problems,
+        'remaining_problems': remaining_problems,
+        'completion_rate': completion_rate,
+        'topic_progress': topic_progress
+    })
