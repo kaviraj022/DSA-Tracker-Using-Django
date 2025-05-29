@@ -1,183 +1,181 @@
 <!-- templates/user_dashboard.html -->
-{% extends 'base.html' %}
+{% extends 'base_user.html' %}
 {% load static %}
 
 {% block content %}
-<div class="container-fluid">
-    <div class="row">
-        <!-- Sidebar -->
-        <nav class="col-md-2 d-none d-md-block bg-light sidebar">
-            <div class="sidebar-sticky">
-                <ul class="nav flex-column">
-                    <li class="nav-item">
-                        <a class="nav-link active" href="#problems">
-                            Problems
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#progress">
-                            My Progress
-                        </a>
-    </li>
-                </ul>
-            </div>
-        </nav>
-
-        <!-- Main content -->
-        <main role="main" class="col-md-10 ml-sm-auto px-4">
-            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-                <h1>Welcome, {{ request.session.username }}!</h1>
-            </div>
-
-            {% if messages %}
-            <div class="messages">
-                {% for message in messages %}
-                <div class="alert alert-{{ message.tags }}">
-                    {{ message }}
-                </div>
-                {% endfor %}
-            </div>
-            {% endif %}
-
-            <!-- Progress Overview -->
-            <div class="row mb-4">
-                <div class="col-md-4">
-                    <div class="stat-card">
-                        <h6 class="stat-card-title">Total Problems</h6>
-                        <p class="stat-card-value">{{ problems_data|length }}</p>
+<div class="content-wrapper">
+    <div class="container-fluid">
+        <!-- Progress Overview -->
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <div class="stat-card bg-white rounded shadow-sm p-4 mb-4 mb-md-0">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <h6 class="stat-card-title m-0 text-muted">Total Problems</h6>
+                        <div class="stat-card-icon bg-light rounded p-3">
+                            <i class="fas fa-list-ul text-primary"></i>
+                        </div>
                     </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="stat-card">
-                        <h6 class="stat-card-title">Problems Solved</h6>
-                        <p class="stat-card-value">{{ completed_problems }}</p>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="stat-card">
-                        <h6 class="stat-card-title">Completion Rate</h6>
-                        <p class="stat-card-value">{{ completion_rate|floatformat:1 }}%</p>
-                    </div>
+                    <h2 class="stat-card-value m-0 fw-bold">{{ total_problems }}</h2>
                 </div>
             </div>
+            <div class="col-md-4">
+                <div class="stat-card bg-white rounded shadow-sm p-4 mb-4 mb-md-0">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <h6 class="stat-card-title m-0 text-muted">Problems Solved</h6>
+                        <div class="stat-card-icon bg-light rounded p-3">
+                            <i class="fas fa-check-circle text-success"></i>
+                        </div>
+                    </div>
+                    <h2 class="stat-card-value m-0 fw-bold">{{ solved_problems }}</h2>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stat-card bg-white rounded shadow-sm p-4">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <h6 class="stat-card-title m-0 text-muted">Completion Rate</h6>
+                        <div class="stat-card-icon bg-light rounded p-3">
+                            <i class="fas fa-chart-pie text-info"></i>
+                        </div>
+                    </div>
+                    <h2 class="stat-card-value m-0 fw-bold">{{ completion_rate|floatformat:1 }}%</h2>
+                </div>
+            </div>
+        </div>
 
-            <!-- Problems List -->
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">Problems List</h5>
-                    <div class="d-flex gap-2">
+        <!-- Problems Section -->
+        <div class="module">
+            <div class="module-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h2>DSA Problems</h2>
+                    <div class="search-container position-relative">
                         <div class="input-group">
                             <span class="input-group-text">
                                 <i class="fas fa-search"></i>
                             </span>
-                            <input type="text" class="form-control" id="problemSearch" placeholder="Search problems...">
+                            <input type="text" id="problemSearch" class="form-control" placeholder="Search problems...">
                         </div>
-                        <select class="form-select" id="topicFilter">
-                            <option value="">All Topics</option>
-                            {% for topic in topics %}
-                            <option value="{{ topic }}">{{ topic }}</option>
-                            {% endfor %}
-                        </select>
-                        <select class="form-select" id="difficultyFilter">
-                            <option value="">All Difficulties</option>
-                            <option value="Easy">Easy</option>
-                            <option value="Medium">Medium</option>
-                            <option value="Hard">Hard</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-hover" id="problemsTable">
-                            <thead>
-                                <tr>
-                                    <th>Status</th>
-                                    <th>Name</th>
-                                    <th>Topic</th>
-                                    <th>Difficulty</th>
-                                    <th>Links</th>
-                                    <th>Notes</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for item in problems_data %}
-                                <tr data-topic="{{ item.problem.topic }}" data-difficulty="{{ item.problem.difficulty }}">
-                                    <td>
-                                        {% if item.progress.is_completed %}
-                                        <i class="fas fa-check-circle text-success"></i>
-                                        {% else %}
-                                        <i class="far fa-circle text-muted"></i>
-                                        {% endif %}
-                                    </td>
-                                    <td>{{ item.problem.name }}</td>
-                                    <td>{{ item.problem.topic }}</td>
-                                    <td>
-                                        <span class="badge bg-{% if item.problem.difficulty == 'Easy' %}success{% elif item.problem.difficulty == 'Medium' %}warning{% else %}danger{% endif %}">
-                                            {{ item.problem.difficulty }}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        {% if item.problem.youtube_link %}
-                                        <a href="{{ item.problem.youtube_link }}" target="_blank" class="btn btn-sm btn-danger">
-                                            <i class="fab fa-youtube"></i>
-                                        </a>
-                                        {% endif %}
-                                        {% if item.problem.practice_link %}
-                                        <a href="{{ item.problem.practice_link }}" target="_blank" class="btn btn-sm btn-primary">
-                                            Practice
-                                        </a>
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        <button type="button" class="btn btn-sm {% if item.note %}btn-info{% else %}btn-outline-info{% endif %}"
-                                                onclick="openNoteModal({{ item.problem.id }}, '{{ item.note.note|default:''|escapejs }}')">
-                                            {% if item.note %}
-                                            <i class="fas fa-edit"></i>
-                                            {% else %}
-                                            <i class="fas fa-plus"></i>
-                                            {% endif %}
-                                            Note
-                                        </button>
-                                    </td>
-                                    <td>
-                                        <button type="button" 
-                                                class="btn btn-sm {% if item.progress.is_completed %}btn-success{% else %}btn-outline-success{% endif %}"
-                                                onclick="toggleProgress({{ item.problem.id }}, {% if item.progress.is_completed %}false{% else %}true{% endif %})">
-                                            {% if item.progress.is_completed %}
-                                            Completed
-                                            {% else %}
-                                            Mark Complete
-                                            {% endif %}
-                                        </button>
-                                    </td>
-                                </tr>
-  {% endfor %}
-                            </tbody>
-                        </table>
+                        <div id="searchSuggestions" class="position-absolute w-100 mt-1 d-none">
+                            <!-- Suggestions will be populated here -->
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Progress Charts -->
-            <div id="progress" class="mt-5">
-                <h2>My Progress</h2>
-                <div class="row">
-                    <div class="col-md-6">
-                        <canvas id="progressChart"></canvas>
+            <div class="module-content">
+                <div class="accordion" id="problemsAccordion">
+                    {% for topic, topic_data in grouped_problems.items %}
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                                    data-bs-target="#topic{{ forloop.counter }}">
+                                {{ topic }}
+                            </button>
+                        </h2>
+                        <div id="topic{{ forloop.counter }}" class="accordion-collapse collapse" 
+                             data-bs-parent="#problemsAccordion">
+                            <div class="accordion-body">
+                                {% for difficulty, problems in topic_data.difficulties.items %}
+                                {% if problems %}
+                                <div class="difficulty-section mb-4">
+                                    <h5 class="text-{{ difficulty|lower|default:'secondary' }}">
+                                        {{ difficulty }}
+                                    </h5>
+                                    <div class="table-responsive">
+                                        <table class="table table-hover">
+                                            <thead>
+                                                <tr>
+                                                    <th scope="col" style="width: 60px">Status</th>
+                                                    <th scope="col">Name</th>
+                                                    <th scope="col" style="width: 120px">Links</th>
+                                                    <th scope="col" style="width: 100px">Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for problem in problems %}
+                                                <tr class="problem-item" 
+                                                    data-id="{{ problem.id }}" 
+                                                    data-name="{{ problem.name }}" 
+                                                    data-topic="{{ topic }}" 
+                                                    data-difficulty="{{ difficulty }}">
+                                                    <td class="text-center">
+                                                        {% if problem.is_solved %}
+                                                        <button class="btn btn-link p-0 toggle-status" 
+                                                                data-problem-id="{{ problem.id }}"
+                                                                data-status="solved"
+                                                                style="font-size: 1.5rem; color: #28a745;">
+                                                            <i class="fas fa-check-circle"></i>
+                                                        </button>
+                                                        {% else %}
+                                                        <button class="btn btn-link p-0 toggle-status" 
+                                                                data-problem-id="{{ problem.id }}"
+                                                                data-status="unsolved"
+                                                                style="font-size: 1.5rem; color: #28a745;">
+                                                            <i class="far fa-circle"></i>
+                                                        </button>
+                                                        {% endif %}
+                                                    </td>
+                                                    <td>{{ problem.name }}</td>
+                                                    <td>
+                                                        <div class="d-flex gap-2">
+                                                            {% if problem.youtube_link %}
+                                                            <a href="{{ problem.youtube_link }}" 
+                                                               target="_blank" 
+                                                               class="btn btn-primary btn-sm" 
+                                                               title="Watch Tutorial">
+                                                                <i class="fab fa-youtube"></i>
+                                                            </a>
+                                                            {% else %}
+                                                            <button class="btn btn-light btn-sm" 
+                                                                    title="No Tutorial Available"
+                                                                    disabled>
+                                                                <i class="fab fa-youtube"></i>
+                                                            </button>
+                                                            {% endif %}
+                                                            {% if problem.practice_link %}
+                                                            <a href="{{ problem.practice_link }}" 
+                                                               target="_blank" 
+                                                               class="btn btn-primary btn-sm" 
+                                                               title="Practice">
+                                                                <i class="fas fa-code"></i>
+                                                            </a>
+                                                            {% else %}
+                                                            <button class="btn btn-light btn-sm" 
+                                                                    title="No Practice Link Available"
+                                                                    disabled>
+                                                                <i class="fas fa-code"></i>
+                                                            </button>
+                                                            {% endif %}
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        <button class="btn btn-outline-info btn-sm note-btn"
+                                                                data-problem-id="{{ problem.id }}"
+                                                                data-note="{{ problem.note|default:'' }}"
+                                                                title="Add/Edit Note">
+                                                            <i class="fas fa-sticky-note"></i>
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                                {% endif %}
+                                {% endfor %}
+                            </div>
+                        </div>
                     </div>
-                    <div class="col-md-6">
-                        <canvas id="topicProgressChart"></canvas>
-                    </div>
+                    {% endfor %}
                 </div>
             </div>
-        </main>
+        </div>
     </div>
 </div>
 
 <!-- Note Modal -->
 <div class="modal fade" id="noteModal" tabindex="-1">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">Problem Note</h5>
@@ -187,169 +185,532 @@
                 <form id="noteForm">
                     {% csrf_token %}
                     <div class="form-group">
-                        <textarea class="form-control" id="noteText" rows="5" placeholder="Add your notes here..."></textarea>
+                        <textarea class="form-control custom-scrollbar" id="noteText" rows="12" placeholder="Add your notes here..."></textarea>
                     </div>
                 </form>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="saveNote()">Save Note</button>
+                <button type="button" class="btn btn-primary" id="saveNoteBtn">Save Note</button>
             </div>
         </div>
     </div>
 </div>
 
+<!-- Messages container for alerts -->
+<div class="messages position-fixed top-0 end-0 p-3" style="z-index: 1050;"></div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+/* Module Styles */
+.module {
+    background: var(--bg-primary);
+    border-radius: 3px;
+    margin-bottom: 2rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.module-header {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    padding: 1rem 1.25rem;
+    border-radius: 3px 3px 0 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.module-header h2 {
+    font-size: 1.25rem;
+    font-weight: 500;
+    margin: 0;
+}
+
+.module-content {
+    padding: 0;
+}
+
+/* Search Styles */
+.search-container {
+    max-width: 300px;
+    z-index: 1000;
+}
+
+#searchSuggestions {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 0.25rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.suggestion-item {
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.suggestion-item:hover {
+    background-color: var(--bg-hover);
+}
+
+.suggestion-topic {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+/* Accordion Styles */
+.accordion-item {
+    border: none;
+    background: none;
+}
+
+.accordion-button {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    font-weight: 500;
+    padding: 1rem;
+    border: none;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.accordion-button:not(.collapsed) {
+    background-color: var(--bg-secondary);
+    color: var(--primary-color);
+    border-bottom: none;
+}
+
+.accordion-button:focus {
+    box-shadow: none;
+}
+
+.accordion-button::after {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%236c757d'%3e%3cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3e%3c/svg%3e");
+}
+
+.accordion-body {
+    padding: 1.25rem;
+}
+
+/* Difficulty Section Styles */
+.difficulty-section {
+    margin-bottom: 2rem;
+}
+
+.difficulty-section h5 {
+    font-size: 1rem;
+    font-weight: 500;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid currentColor;
+}
+
+.difficulty-section h5.text-easy {
+    color: #28a745;
+}
+
+.difficulty-section h5.text-medium {
+    color: #ffc107;
+}
+
+.difficulty-section h5.text-hard {
+    color: #dc3545;
+}
+
+/* Table Styles */
+.table {
+    margin-bottom: 0;
+}
+
+.table th {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    background-color: var(--bg-secondary);
+}
+
+.table td {
+    padding: 0.75rem 1rem;
+    vertical-align: middle;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.table tr:hover {
+    background-color: var(--bg-hover);
+}
+
+/* Button Styles */
+.btn-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+}
+
+.btn-outline-primary,
+.btn-outline-danger,
+.btn-outline-success,
+.btn-outline-info {
+    border-width: 1px;
+}
+
+.btn-outline-primary:hover,
+.btn-outline-danger:hover,
+.btn-outline-success:hover,
+.btn-outline-info:hover {
+    color: #fff;
+}
+
+/* Dark Mode Adjustments */
+[data-theme="dark"] .table {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .table td {
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] .table th {
+    background-color: var(--bg-secondary);
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] .table tr:hover {
+    background-color: var(--bg-hover);
+}
+
+/* Highlight Animation */
+@keyframes highlight {
+    0% { background-color: var(--bg-hover); }
+    100% { background-color: transparent; }
+}
+
+.highlight {
+    animation: highlight 2s ease-out;
+}
+
+/* Progress Overview Styles */
+.stat-card {
+    transition: transform 0.2s ease-in-out;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+}
+
+[data-theme="dark"] .stat-card {
+    background-color: var(--bg-secondary) !important;
+}
+
+[data-theme="dark"] .stat-card-icon {
+    background-color: var(--bg-primary) !important;
+}
+
+.stat-card-icon {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.stat-card-icon i {
+    font-size: 1.5rem;
+}
+
+/* Animation for stat updates */
+@keyframes highlight-update {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+.highlight-update {
+    animation: highlight-update 0.5s ease-out;
+}
+
+/* Custom Scrollbar */
+.custom-scrollbar {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none;  /* IE and Edge */
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+    display: none; /* Chrome, Safari and Opera */
+}
+
+/* Textarea styles */
+#noteText {
+    resize: none;
+    border: none;
+    padding: 1rem;
+    font-size: 1rem;
+    line-height: 1.5;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+}
+
+#noteText:focus {
+    outline: none;
+    box-shadow: none;
+}
+
+/* Modal styles */
+.modal-content {
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-color);
+}
+
+.modal-header {
+    border-bottom: 1px solid var(--border-color);
+    padding: 1rem 1.5rem;
+}
+
+.modal-footer {
+    border-top: 1px solid var(--border-color);
+    padding: 1rem 1.5rem;
+}
+
+.modal-body {
+    padding: 1.5rem;
+}
+</style>
+{% endblock %}
+
 {% block extra_js %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
+document.addEventListener('DOMContentLoaded', function() {
     let currentProblemId = null;
-
-    // Problem filtering
-    document.getElementById('problemSearch').addEventListener('input', filterProblems);
-    document.getElementById('topicFilter').addEventListener('change', filterProblems);
-    document.getElementById('difficultyFilter').addEventListener('change', filterProblems);
-
-    function filterProblems() {
-        const searchTerm = document.getElementById('problemSearch').value.toLowerCase();
-        const topicFilter = document.getElementById('topicFilter').value;
-        const difficultyFilter = document.getElementById('difficultyFilter').value;
+    const searchInput = document.getElementById('problemSearch');
+    const searchSuggestions = document.getElementById('searchSuggestions');
+    const accordionItems = document.querySelectorAll('.accordion-item');
+    const noteModal = document.getElementById('noteModal');
+    const noteText = document.getElementById('noteText');
+    const saveNoteBtn = document.getElementById('saveNoteBtn');
+    
+    // Search functionality
+    searchInput.addEventListener('input', function(e) {
+        const searchTerm = e.target.value.toLowerCase();
         
-        document.querySelectorAll('#problemsTable tbody tr').forEach(row => {
-            const topic = row.dataset.topic;
-            const difficulty = row.dataset.difficulty;
-            const text = row.textContent.toLowerCase();
-            
-            const matchesSearch = searchTerm === '' || text.includes(searchTerm);
-            const matchesTopic = topicFilter === '' || topic === topicFilter;
-            const matchesDifficulty = difficultyFilter === '' || difficulty === difficultyFilter;
-            
-            row.style.display = matchesSearch && matchesTopic && matchesDifficulty ? '' : 'none';
-        });
-    }
+        if (searchTerm.length < 1) {
+            searchSuggestions.classList.add('d-none');
+            return;
+        }
 
+        // Get all problems
+        const problems = Array.from(document.querySelectorAll('.problem-item'))
+            .map(problem => ({
+                id: problem.dataset.id,
+                name: problem.dataset.name.toLowerCase(),
+                topic: problem.dataset.topic,
+                element: problem
+            }))
+            .filter(problem => 
+                problem.name.includes(searchTerm) ||
+                problem.topic.toLowerCase().includes(searchTerm)
+            )
+            .slice(0, 5);
+
+        // Show suggestions
+        if (problems.length > 0) {
+            searchSuggestions.innerHTML = problems.map(problem => `
+                <div class="suggestion-item" data-problem-id="${problem.id}">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span>${problem.name}</span>
+                        <span class="suggestion-topic">${problem.topic}</span>
+                    </div>
+                </div>
+            `).join('');
+            searchSuggestions.classList.remove('d-none');
+        } else {
+            searchSuggestions.classList.add('d-none');
+        }
+    });
+
+    // Handle suggestion click
+    searchSuggestions.addEventListener('click', function(e) {
+        const suggestionItem = e.target.closest('.suggestion-item');
+        if (suggestionItem) {
+            const problemId = suggestionItem.dataset.problemId;
+            const problemRow = document.querySelector(`.problem-item[data-id="${problemId}"]`);
+            
+            if (problemRow) {
+                // Find the accordion item containing this problem
+                const accordionItem = problemRow.closest('.accordion-item');
+                const accordionCollapse = accordionItem.querySelector('.accordion-collapse');
+                const accordionButton = accordionItem.querySelector('.accordion-button');
+                
+                // Open the accordion
+                new bootstrap.Collapse(accordionCollapse).show();
+                accordionButton.classList.remove('collapsed');
+                
+                // Wait for accordion animation to complete before scrolling
+                setTimeout(() => {
+                    problemRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    problemRow.classList.add('highlight');
+                    setTimeout(() => problemRow.classList.remove('highlight'), 2000);
+                }, 350);
+                
+                // Clear search
+                searchInput.value = '';
+                searchSuggestions.classList.add('d-none');
+            }
+        }
+    });
+
+    // Close suggestions when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.search-container')) {
+            searchSuggestions.classList.add('d-none');
+        }
+    });
+
+    // Note Modal Functions
     function openNoteModal(problemId, note = '') {
         currentProblemId = problemId;
-        document.getElementById('noteText').value = note;
-        new bootstrap.Modal(document.getElementById('noteModal')).show();
+        noteText.value = note || '';
+        const modal = new bootstrap.Modal(noteModal);
+        modal.show();
     }
 
-    function saveNote() {
-        const note = document.getElementById('noteText').value;
+    async function saveNote() {
+        if (!currentProblemId) return;
         
-        fetch(`/save_note/${currentProblemId}/`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-            },
-            body: JSON.stringify({ note: note })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                location.reload();
-            }
-        });
-    }
+        const note = noteText.value;
+        const noteBtn = document.querySelector(`.note-btn[data-problem-id="${currentProblemId}"]`);
+        
+        try {
+            const response = await fetch(`/save_note/${currentProblemId}/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                },
+                body: JSON.stringify({ note: note })
+            });
 
-    function toggleProgress(problemId, completed) {
-        fetch(`/toggle_progress/${problemId}/`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-            },
-            body: JSON.stringify({ completed: completed })
-        })
-        .then(response => response.json())
-        .then(data => {
+            const data = await response.json();
             if (data.success) {
-                location.reload();
-            }
-        });
-    }
-
-    // Chart initialization
-    document.addEventListener('DOMContentLoaded', function() {
-        // Progress pie chart
-        const progressCtx = document.getElementById('progressChart').getContext('2d');
-        new Chart(progressCtx, {
-            type: 'pie',
-            data: {
-                labels: ['Completed', 'Remaining'],
-                datasets: [{
-                    data: [
-                        {{ completed_problems }},
-                        {{ remaining_problems }}
-                    ],
-                    backgroundColor: ['#28a745', '#dee2e6']
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    title: {
-                        display: true,
-                        text: 'Overall Progress'
+                // Update the note button's data attribute and title
+                if (noteBtn) {
+                    noteBtn.dataset.note = note;
+                    noteBtn.title = note ? 'Edit Note' : 'Add Note';
+                    
+                    // Update icon color if there's a note
+                    const icon = noteBtn.querySelector('i');
+                    if (icon) {
+                        icon.style.color = note ? '#ffc107' : ''; // Yellow color for notes that exist
                     }
                 }
+                
+                // Close modal
+                const modal = bootstrap.Modal.getInstance(noteModal);
+                modal.hide();
+                
+                // Show success message
+                showAlert('Note saved successfully', 'success');
+            } else {
+                showAlert('Error saving note', 'danger');
             }
-        });
+        } catch (error) {
+            console.error('Error:', error);
+            showAlert('Error saving note', 'danger');
+        }
+    }
 
-        // Topic progress chart
-        const topicCtx = document.getElementById('topicProgressChart').getContext('2d');
-        const topics = [...new Set(Array.from(document.querySelectorAll('td:nth-child(3)')).map(td => td.textContent))];
-        const completedByTopic = topics.map(topic => {
-            const topicRows = Array.from(document.querySelectorAll('tr')).filter(tr => 
-                tr.children[2] && tr.children[2].textContent === topic
-            );
-            const completedRows = topicRows.filter(tr => 
-                tr.children[0].querySelector('.fa-check-circle')
-            );
-            return completedRows.length;
-        });
-        const totalByTopic = topics.map(topic => 
-            Array.from(document.querySelectorAll('td:nth-child(3)')).filter(td => td.textContent === topic).length
-        );
+    // Toggle status functionality
+    document.querySelectorAll('.toggle-status').forEach(button => {
+        button.addEventListener('click', async function() {
+            const problemId = this.dataset.problemId;
+            const currentStatus = this.dataset.status;
+            const isCompleted = currentStatus === 'unsolved';
+            
+            try {
+                const response = await fetch(`/toggle_progress/${problemId}/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    },
+                    body: JSON.stringify({ completed: isCompleted })
+                });
 
-        new Chart(topicCtx, {
-            type: 'bar',
-            data: {
-                labels: topics,
-                datasets: [{
-                    label: 'Completed',
-                    data: completedByTopic,
-                    backgroundColor: 'rgba(40, 167, 69, 0.5)',
-                    borderColor: 'rgba(40, 167, 69, 1)',
-                    borderWidth: 1
-                },
-                {
-                    label: 'Total',
-                    data: totalByTopic,
-                    backgroundColor: 'rgba(222, 226, 230, 0.5)',
-                    borderColor: 'rgba(222, 226, 230, 1)',
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            stepSize: 1
-                        }
+                const data = await response.json();
+
+                if (data.success && data.data) {
+                    // Update button state
+                    if (currentStatus === 'solved') {
+                        this.innerHTML = '<i class="far fa-circle"></i>';
+                        this.dataset.status = 'unsolved';
+                    } else {
+                        this.innerHTML = '<i class="fas fa-check-circle"></i>';
+                        this.dataset.status = 'solved';
                     }
-                },
-                plugins: {
-                    title: {
-                        display: true,
-                        text: 'Progress by Topic'
+
+                    // Find stat cards and update values directly
+                    const statCards = document.querySelectorAll('.stat-card');
+                    const solvedElement = statCards[1].querySelector('h2.stat-card-value');
+                    const completionElement = statCards[2].querySelector('h2.stat-card-value');
+
+                    if (solvedElement && completionElement) {
+                        solvedElement.textContent = data.data.solved_problems;
+                        completionElement.textContent = `${data.data.completion_rate}%`;
                     }
+                } else {
+                    showAlert('Error updating progress', 'danger');
                 }
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert('Error updating progress', 'danger');
             }
         });
     });
+    
+    // Alert function
+    function showAlert(message, type) {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+        alertDiv.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        document.querySelector('.messages').appendChild(alertDiv);
+        
+        setTimeout(() => {
+            alertDiv.remove();
+        }, 3000);
+    }
+
+    // Event Listeners
+    document.querySelectorAll('.note-btn').forEach(btn => {
+        const note = btn.dataset.note;
+        // Set initial icon color if note exists
+        if (note) {
+            const icon = btn.querySelector('i');
+            if (icon) {
+                icon.style.color = '#ffc107'; // Yellow color for notes that exist
+            }
+            btn.title = 'Edit Note';
+        }
+        
+        btn.addEventListener('click', function() {
+            const problemId = this.dataset.problemId;
+            const note = this.dataset.note;
+            openNoteModal(problemId, note);
+        });
+    });
+
+    // Save note button click handler
+    saveNoteBtn.addEventListener('click', saveNote);
+
+    // Allow saving with Ctrl+Enter in textarea
+    noteText.addEventListener('keydown', function(e) {
+        if (e.ctrlKey && e.key === 'Enter') {
+            saveNote();
+        }
+    });
+});
 </script>
-{% endblock %}
 {% endblock %}

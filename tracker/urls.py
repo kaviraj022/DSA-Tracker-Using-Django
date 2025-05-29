@@ -21,6 +21,7 @@ urlpatterns = [
     
     # User routes
     path('dashboard/', views.user_dashboard, name='user_dashboard'),
+    path('progress/', views.user_progress_view, name='user_progress_view'),
     path('save_note/<int:problem_id>/', views.save_note, name='save_note'),
     path('toggle_progress/<int:problem_id>/', views.toggle_progress, name='toggle_progress'),
     path('statistics/', views.get_user_statistics, name='get_user_statistics'),
