@@ -121,6 +121,7 @@ body {
 .table {
     color: var(--text-primary) !important;
     border-color: var(--border-color);
+    width: 100%;
 }
 
 .table thead th {
@@ -129,6 +130,8 @@ body {
     font-weight: 600;
     border-bottom: 2px solid var(--border-color);
     padding: 1rem;
+    text-transform: uppercase;
+    font-size: 0.875rem;
 }
 
 .table tbody td {
@@ -136,6 +139,10 @@ body {
     border-color: var(--border-color);
     padding: 1rem;
     vertical-align: middle;
+}
+
+.table tbody tr:hover {
+    background-color: var(--bg-hover);
 }
 
 /* Form Controls */
@@ -149,6 +156,7 @@ body {
     background-color: var(--input-bg);
     color: var(--text-primary);
     border-color: var(--accent-color);
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
 }
 
 .form-control::placeholder {
@@ -261,14 +269,16 @@ body {
 
 [data-theme="dark"] .form-control:focus,
 [data-theme="dark"] .form-select:focus {
-    background-color: var(--bg-secondary);
+    background-color: var(--bg-hover);
     color: var(--text-primary);
     border-color: var(--accent-color);
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
 }
 
 /* Table Styles */
 .table {
     color: var(--text-primary) !important;
+    border-color: var(--border-color);
 }
 
 .table input.form-control-plaintext {
