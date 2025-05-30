@@ -7,9 +7,6 @@
 
 /* Cards */
 .stat-card {
-    background-color: #fff;
-    border-radius: 0.5rem;
-    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, .075);
     padding: 1.5rem;
     margin-bottom: 1.5rem;
     transition: transform 0.2s ease-in-out;
@@ -20,7 +17,6 @@
 }
 
 .stat-card-title {
-    color: #6c757d;
     font-size: 0.875rem;
     font-weight: 600;
     text-transform: uppercase;
@@ -28,7 +24,6 @@
 }
 
 .stat-card-value {
-    color: #212529;
     font-size: 2rem;
     font-weight: 700;
     margin-bottom: 0;
@@ -36,15 +31,12 @@
 
 /* Problem List */
 .problem-list {
-    background-color: #fff;
-    border-radius: 0.5rem;
-    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, .075);
     margin-bottom: 2rem;
 }
 
 .problem-list-header {
     padding: 1rem 1.5rem;
-    border-bottom: 1px solid #e9ecef;
+    border-bottom: 1px solid var(--border-color);
 }
 
 .problem-list-title {
@@ -83,17 +75,17 @@
 
 /* Difficulty Badges */
 .badge-easy {
-    background-color: #28a745;
+    background-color: var(--success-color);
     color: #fff;
 }
 
 .badge-medium {
-    background-color: #ffc107;
+    background-color: var(--warning-color);
     color: #000;
 }
 
 .badge-hard {
-    background-color: #dc3545;
+    background-color: var(--danger-color);
     color: #fff;
 }
 
@@ -103,9 +95,6 @@
 }
 
 .chart-container {
-    background-color: #fff;
-    border-radius: 0.5rem;
-    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, .075);
     padding: 1.5rem;
     margin-bottom: 1.5rem;
 }
