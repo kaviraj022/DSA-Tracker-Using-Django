@@ -16,7 +16,6 @@ urlpatterns = [
     path('admin/problem/add/', views.add_problem, name='add_problem'),
     path('admin/problem/delete/<int:problem_id>/', views.delete_problem, name='delete_problem'),
     path('admin/update_problems/', views.update_problems, name='update_problems'),
-    path('admin/user_progress/<int:user_id>/', views.user_progress, name='user_progress'),
     path('admin/delete_user/<int:user_id>/', views.delete_user, name='delete_user'),
     
     # User routes
