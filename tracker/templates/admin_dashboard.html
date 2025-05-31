@@ -115,7 +115,7 @@
 </div>
 
 <!-- Add Problem Modal -->
-{% include "modals/add_problem_modal.html" %}
+{% include "add_problem_modal.html" %}
 
 <!-- Link Edit Modal -->
 <div class="link-edit-modal" id="linkEditModal">
@@ -212,12 +212,8 @@ searchInput.addEventListener('input', function() {
             const div = document.createElement('div');
             div.className = 'suggestion-item p-2 border-bottom';
             div.innerHTML = `
-                <div class="d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center">
                     <span>${problem.name}</span>
-                    <div>
-                        <span class="badge bg-secondary me-1">${problem.topic}</span>
-                        <span class="badge bg-${getDifficultyColor(problem.difficulty)}">${problem.difficulty}</span>
-                    </div>
                 </div>
             `;
             
@@ -429,6 +425,7 @@ document.addEventListener('keydown', function(e) {
 /* Search Container */
 .search-container {
     z-index: 1000;
+    position: relative;
 }
 
 #searchSuggestions {
@@ -438,19 +435,31 @@ document.addEventListener('keydown', function(e) {
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     max-height: 300px;
     overflow-y: auto;
+    position: absolute;
+    width: 100%;
+    top: 100%;
+    left: 0;
+    margin-top: 0.25rem;
+    z-index: 1050;
 }
 
 .suggestion-item {
     cursor: pointer;
     transition: background-color 0.2s;
     color: var(--text-primary);
+    padding: 0.5rem 1rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.suggestion-item:last-child {
+    border-bottom: none;
 }
 
 .suggestion-item:hover {
     background-color: var(--bg-hover);
 }
 
-/* Accordion Styling */
+/* Accordion Styles */
 .accordion-item {
     background-color: var(--bg-primary);
     border: 1px solid var(--border-color);
@@ -470,59 +479,12 @@ document.addEventListener('keydown', function(e) {
     filter: var(--icon-filter);
 }
 
-/* Table Styling */
-.table {
-    color: var(--text-primary);
-    border-collapse: collapse;
+.accordion-body {
+    background-color: var(--bg-primary);
 }
 
-.table thead th {
-    background-color: var(--bg-secondary);
-    border-bottom: 2px solid var(--border-color);
-    padding: 0.75rem;
-    vertical-align: middle;
-}
-
-.table thead th:nth-child(1) {  /* Name column header */
-    padding-left: 1rem;
-}
-
-.table thead th:nth-child(2) {  /* Links column header */
-    text-align: center;
-    padding-left: 0;
-    padding-right: 0;
-}
-
-.table thead th:nth-child(3) {  /* Actions column header */
-    text-align: center;
-    padding-left: 0;
-    padding-right: 0;
-}
-
-.table tbody tr:hover {
-    background-color: var(--bg-hover);
-}
-
-.table td {
-    vertical-align: middle;
-    padding: 0.75rem;
-}
-
-.table td:first-child {
-    width: 60%;
-    max-width: 0;
-    padding-left: 1rem;
-}
-
-.table td:nth-child(2) {  /* Links column */
-    width: 25%;
-    padding: 0.75rem 0;
-}
-
-.table td:last-child {  /* Actions column */
-    width: 15%;
-    text-align: center;
-    padding: 0.75rem 0;
+[data-theme="dark"] .accordion-body {
+    background-color: var(--bg-primary);
 }
 
 /* Links styling */
@@ -621,19 +583,6 @@ document.addEventListener('keydown', function(e) {
     cursor: pointer;
 }
 
-/* Form Controls */
-.form-control, .form-control-plaintext {
-    background-color: var(--bg-primary);
-    color: var(--text-primary);
-    border-color: var(--border-color);
-}
-
-.form-control:focus, .form-control-plaintext:focus {
-    background-color: var(--bg-hover);
-    color: var(--text-primary);
-    border-color: var(--accent-color);
-}
-
 /* Difficulty Sections */
 .difficulty-section {
     padding: 1rem;
@@ -650,48 +599,6 @@ document.addEventListener('keydown', function(e) {
 @keyframes highlight {
     0% { background-color: var(--highlight-color); }
     100% { background-color: transparent; }
-}
-
-/* Dark Mode Specific */
-[data-theme="dark"] {
-    --bg-primary: #1a1a1a;
-    --bg-secondary: #2d2d2d;
-    --bg-hover: #363636;
-    --text-primary: #e0e0e0;
-    --border-color: #404040;
-    --accent-color: #0d6efd;
-    --highlight-color: rgba(255, 193, 7, 0.2);
-    --icon-filter: invert(1);
-}
-
-[data-theme="dark"] .form-control-plaintext {
-    background-color: var(--bg-secondary);
-    border: 1px solid var(--border-color);
-    border-radius: 0.25rem;
-    padding: 0.375rem 0.75rem;
-}
-
-[data-theme="dark"] .form-control-plaintext:hover {
-    background-color: var(--bg-hover);
-}
-
-[data-theme="dark"] .form-control-plaintext:focus {
-    background-color: var(--bg-hover);
-    border-color: var(--accent-color);
-    outline: none;
-    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
-}
-
-/* Light Mode Specific */
-[data-theme="light"] {
-    --bg-primary: #ffffff;
-    --bg-secondary: #f8f9fa;
-    --bg-hover: #f0f0f0;
-    --text-primary: #212529;
-    --border-color: #dee2e6;
-    --accent-color: #0d6efd;
-    --highlight-color: #fff3cd;
-    --icon-filter: none;
 }
 
 /* Difficulty colors for dark mode */

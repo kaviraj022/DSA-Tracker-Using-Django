@@ -453,77 +453,15 @@ def update_problems(request):
             data = json.loads(request.body)
             problems = data.get('problems', [])
             
-            if not problems:
-                return JsonResponse({
-                    'success': False,
-                    'error': 'No problems provided for update'
-                })
-            
             for problem_data in problems:
-                problem_id = problem_data.pop('id', None)
-                if not problem_id:
-                    return JsonResponse({
-                        'success': False,
-                        'error': 'Problem ID is missing'
-                    })
-                
-                try:
-                    problem = Problem.objects.get(id=problem_id)
-                    for field, value in problem_data.items():
-                        setattr(problem, field, value)
-                    problem.save()
-                except Problem.DoesNotExist:
-                    return JsonResponse({
-                        'success': False,
-                        'error': f'Problem with ID {problem_id} not found'
-                    })
-                except Exception as e:
-                    return JsonResponse({
-                        'success': False,
-                        'error': f'Error updating problem {problem_id}: {str(e)}'
-                    })
+                problem_id = problem_data.pop('id')
+                Problem.objects.filter(id=problem_id).update(**problem_data)
             
             return JsonResponse({'success': True})
-            
-        except json.JSONDecodeError:
-            return JsonResponse({
-                'success': False,
-                'error': 'Invalid JSON data'
-                })
         except Exception as e:
-            return JsonResponse({
-                'success': False,
-                'error': f'Server error: {str(e)}'
-            })
-            
-    return JsonResponse({
-        'success': False,
-        'error': 'Invalid request method'
-    })
-
-@login_required
-@admin_required
-def user_progress(request, user_id):
-    user = get_object_or_404(User, id=user_id)
-    progress_data = UserProgress.objects.filter(user=user, is_completed=True)
-    notes_data = UserNote.objects.filter(user=user)
+            return JsonResponse({'success': False, 'error': str(e)})
     
-    total_problems = Problem.objects.count()
-    completed_problems = progress_data.count()
-    
-    context = {
-        'user': user,
-        'total_problems': total_problems,
-        'completed_problems': completed_problems,
-        'completion_rate': (completed_problems / total_problems * 100) if total_problems > 0 else 0,
-        'progress_data': progress_data,
-        'notes_data': notes_data
-    }
-    
-    return JsonResponse({
-        'success': True,
-        'html': render(request, 'user_progress_modal.html', context).content.decode('utf-8')
-    })
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
 
 @login_required
 @admin_required
@@ -559,8 +497,7 @@ def admin_users(request):
             'id': user.id,
             'username': user.username,
             'email': user.email,
-            'progress': round(progress, 1),
-            'last_login': None  # You can add last_login tracking if needed
+            'progress': round(progress, 1)
         })
     
     return render(request, 'admin_users.html', {'users': user_data})
