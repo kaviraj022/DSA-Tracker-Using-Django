@@ -17,12 +17,12 @@
     <!-- Top Navigation -->
     <nav class="navbar navbar-expand-lg">
         <div class="container-fluid">
-            <a class="navbar-brand" href="{% if request.session.role == 'admin' %}{% url 'admin_dashboard' %}{% else %}{% url 'user_dashboard' %}{% endif %}">
+            <a class="navbar-brand" href="{% if request.session.role == 'admin' or request.session.role == 'superadmin' %}{% url 'admin_dashboard' %}{% else %}{% url 'user_dashboard' %}{% endif %}">
                 <i class="fas fa-code me-2"></i>DSA Tracker
             </a>
             
             <!-- Navigation Links -->
-            {% if request.session.role == 'admin' %}
+            {% if request.session.role == 'admin' or request.session.role == 'superadmin' %}
             <div class="navbar-nav me-auto">
                 <a class="nav-link {% if request.path == '/admin/dashboard/' %}active{% endif %}" href="{% url 'admin_dashboard' %}">
                     <i class="fas fa-list me-1"></i>Problems

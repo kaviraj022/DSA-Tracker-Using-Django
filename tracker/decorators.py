@@ -9,8 +9,15 @@ def login_required(view_func):
 
 def admin_required(view_func):
     def wrapper(request, *args, **kwargs):
-        if request.session.get('role') != 'admin':
+        if request.session.get('role') not in ['admin', 'superadmin']:
             return redirect('user_dashboard')  # prevent normal users
+        return view_func(request, *args, **kwargs)
+    return wrapper
+
+def superadmin_required(view_func):
+    def wrapper(request, *args, **kwargs):
+        if request.session.get('role') != 'superadmin':
+            return redirect('admin_dashboard' if request.session.get('role') == 'admin' else 'user_dashboard')
         return view_func(request, *args, **kwargs)
     return wrapper
 

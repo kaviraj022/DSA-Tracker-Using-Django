@@ -1,0 +1,62 @@
+mysql -u root -p
+Kavi#8#0#9#8#
+
+mysql> DESCRIBE Users;
++---------------+----------------------+------+-----+---------+----------------+
+| Field         | Type                 | Null | Key | Default | Extra          |
++---------------+----------------------+------+-----+---------+----------------+
+| id            | int                  | NO   | PRI | NULL    | auto_increment |
+| username      | varchar(100)         | NO   | UNI | NULL    |                |
+| email         | varchar(100)         | NO   | UNI | NULL    |                |
+| password_hash | varchar(255)         | NO   |     | NULL    |                |
+| role          | enum('admin','user') | NO   |     | user    |                |
++---------------+----------------------+------+-----+---------+----------------+
+5 rows in set (0.04 sec)
+
+mysql> SHOW TABLES;
++-----------------------+
+| Tables_in_dsa_tracker |
++-----------------------+
+| problems              |
+| usernotes             |
+| userprogress          |
+| users                 |
++-----------------------+
+4 rows in set (0.00 sec)
+
+mysql> DESCRIBE Problems;
++---------------+--------------+------+-----+---------+----------------+
+| Field         | Type         | Null | Key | Default | Extra          |
++---------------+--------------+------+-----+---------+----------------+
+| id            | int          | NO   | PRI | NULL    | auto_increment |
+| topic         | varchar(100) | NO   |     | NULL    |                |
+| difficulty    | varchar(50)  | NO   |     | NULL    |                |
+| name          | varchar(255) | NO   | UNI | NULL    |                |
+| youtube_link  | varchar(255) | YES  |     | NULL    |                |
+| practice_link | varchar(255) | YES  |     | NULL    |                |
++---------------+--------------+------+-----+---------+----------------+
+6 rows in set (0.02 sec)
+
+mysql> DESCRIBE UserNotes;
++------------+------+------+-----+---------+----------------+
+| Field      | Type | Null | Key | Default | Extra          |
++------------+------+------+-----+---------+----------------+
+| id         | int  | NO   | PRI | NULL    | auto_increment |
+| user_id    | int  | NO   | MUL | NULL    |                |
+| problem_id | int  | NO   | MUL | NULL    |                |
+| note       | text | YES  |     | NULL    |                |
++------------+------+------+-----+---------+----------------+
+4 rows in set (0.00 sec)
+
+mysql> DESCRIBE UserProgress;
++--------------+------------+------+-----+---------+----------------+
+| Field        | Type       | Null | Key | Default | Extra          |
++--------------+------------+------+-----+---------+----------------+
+| id           | int        | NO   | PRI | NULL    | auto_increment |
+| user_id      | int        | NO   | MUL | NULL    |                |
+| problem_id   | int        | NO   | MUL | NULL    |                |
+| is_completed | tinyint(1) | NO   |     | 0       |                |
++--------------+------------+------+-----+---------+----------------+
+4 rows in set (0.00 sec)
+
+

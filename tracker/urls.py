@@ -10,9 +10,13 @@ urlpatterns = [
     path('logout/', views.logout_view, name='logout'),
     path('change-password/', views.change_password, name='change_password'),
     
+    # Superadmin routes
+    # path('superadmin/dashboard/', views.superadmin_dashboard, name='superadmin_dashboard'),
+    
     # Admin routes
     path('admin/dashboard/', views.admin_dashboard, name='admin_dashboard'),
     path('admin/users/', views.admin_users, name='admin_users'),
+    path('admin/create-admin/', views.create_admin, name='create_admin'),
     path('admin/problem/add/', views.add_problem, name='add_problem'),
     path('admin/problem/delete/<int:problem_id>/', views.delete_problem, name='delete_problem'),
     path('admin/update_problems/', views.update_problems, name='update_problems'),
