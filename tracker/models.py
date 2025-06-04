@@ -4,7 +4,11 @@ class User(models.Model):
     username = models.CharField(max_length=100, unique=True)
     email = models.EmailField(max_length=100, unique=True)
     password_hash = models.CharField(max_length=255)
-    role = models.CharField(max_length=5, choices=[('admin', 'admin'), ('user', 'user')], default='user')
+    role = models.CharField(
+        max_length=10, 
+        choices=[('superadmin', 'superadmin'), ('admin', 'admin'), ('user', 'user')], 
+        default='user'
+    )
     class Meta:
         db_table = 'users' 
 class Problem(models.Model):

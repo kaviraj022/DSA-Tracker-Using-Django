@@ -6,7 +6,7 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 import json
 from django.db.models import Count
-from .decorators import login_required, admin_required, user_required
+from .decorators import login_required, admin_required, user_required, superadmin_required
 
 
 def signin(request):
@@ -28,11 +28,10 @@ def signin(request):
 
             messages.success(request, 'Logged in successfully')
 
-            if user.role == 'admin':
-                return redirect('admin_dashboard')  # URL name for admin dashboard
+            if user.role == 'superadmin' or user.role == 'admin':
+                return redirect('admin_dashboard')
             else:
-                return redirect('user_dashboard')  # URL name for user dashboard
-
+                return redirect('user_dashboard')
         else:
             messages.error(request, 'Invalid email or password')
             return redirect('signin')
@@ -45,7 +44,6 @@ def signup(request):
         username = request.POST['username']
         email = request.POST['email']
         password = request.POST['password']
-        role = request.POST.get('role', 'user')
 
         if User.objects.filter(username=username).exists():
             messages.error(request, 'Username already exists')
@@ -56,7 +54,7 @@ def signup(request):
             return redirect('signup')
 
         hashed_password = make_password(password)
-        user = User(username=username, email=email, password_hash=hashed_password, role=role)
+        user = User(username=username, email=email, password_hash=hashed_password, role='user')
         user.save()
 
         messages.success(request, 'User registered successfully')
@@ -469,10 +467,22 @@ def delete_user(request, user_id):
     if request.method == 'POST':
         try:
             user = User.objects.get(id=user_id)
-            if user.role == 'admin':
-                return JsonResponse({'success': False, 'error': 'Cannot delete admin users'})
-            user.delete()
-            return JsonResponse({'success': True})
+            current_user_role = request.session.get('role')
+            
+            # Superadmin can delete everyone except other superadmins
+            if current_user_role == 'superadmin':
+                if user.role == 'superadmin':
+                    return JsonResponse({'success': False, 'error': 'Cannot delete superadmin users'})
+                user.delete()
+                return JsonResponse({'success': True})
+            
+            # Regular admin can only delete regular users
+            elif current_user_role == 'admin':
+                if user.role in ['admin', 'superadmin']:
+                    return JsonResponse({'success': False, 'error': 'Regular admins cannot delete admin or superadmin users'})
+                user.delete()
+                return JsonResponse({'success': True})
+                
         except User.DoesNotExist:
             return JsonResponse({'success': False, 'error': 'User not found'})
     return JsonResponse({'success': False, 'error': 'Invalid request method'})
@@ -480,7 +490,7 @@ def delete_user(request, user_id):
 @login_required
 @admin_required
 def admin_users(request):
-    users = User.objects.filter(role='user')
+    users = User.objects.all()  # Get all users instead of just role='user'
     user_data = []
     
     for user in users:
@@ -497,10 +507,39 @@ def admin_users(request):
             'id': user.id,
             'username': user.username,
             'email': user.email,
+            'role': user.role,  # Include role in the data
             'progress': round(progress, 1)
         })
     
     return render(request, 'admin_users.html', {'users': user_data})
+
+@login_required
+@superadmin_required
+def create_admin(request):
+    if request.method == 'POST':
+        username = request.POST['username']
+        email = request.POST['email']
+        password = request.POST['password']
+        
+        # Force role to be 'admin' as superadmin is a special case
+        role = 'admin'
+
+        if User.objects.filter(username=username).exists():
+            messages.error(request, 'Username already exists')
+            return redirect('admin_users')
+
+        if User.objects.filter(email=email).exists():
+            messages.error(request, 'Email already exists')
+            return redirect('admin_users')
+
+        hashed_password = make_password(password)
+        user = User(username=username, email=email, password_hash=hashed_password, role=role)
+        user.save()
+
+        messages.success(request, 'Admin user created successfully')
+        return redirect('admin_users')
+
+    return render(request, 'create_admin.html')
 
 @login_required
 @user_required
@@ -533,3 +572,8 @@ def user_progress_view(request):
         'completion_rate': completion_rate,
         'topic_progress': topic_progress
     })
+
+def login_view(request):
+    if request.method == 'POST':
+        if request.session.get('role') == 'superadmin':
+            return redirect('admin_dashboard')
