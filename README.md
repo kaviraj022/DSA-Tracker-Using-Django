@@ -1,3 +1,4 @@
+‼️Switch to code or raw text for better alignment‼️
 Required Packages: Pymysql, Django
 Languages: HTML, CSS, JS, Python
 Database: MySQL
