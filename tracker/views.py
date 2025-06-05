@@ -1,12 +1,12 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.hashers import make_password, check_password
-from .models import User, Problem, UserNote, UserProgress  # Import your models
+from .models import User, Problem, UserNote, UserProgress
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 import json
 from django.db.models import Count
-from .decorators import login_required, admin_required, user_required, superadmin_required
+from .decorators import login_required, admin_required, user_required
 
 
 def signin(request):
@@ -514,32 +514,55 @@ def admin_users(request):
     return render(request, 'admin_users.html', {'users': user_data})
 
 @login_required
-@superadmin_required
+@admin_required
 def create_admin(request):
     if request.method == 'POST':
-        username = request.POST['username']
-        email = request.POST['email']
-        password = request.POST['password']
-        
-        # Force role to be 'admin' as superadmin is a special case
-        role = 'admin'
+        try:
+            data = json.loads(request.body)
+            username = data.get('username')
+            email = data.get('email')
+            password = data.get('password')
 
-        if User.objects.filter(username=username).exists():
-            messages.error(request, 'Username already exists')
-            return redirect('admin_users')
+            if not all([username, email, password]):
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Please fill in all required fields.'
+                })
 
-        if User.objects.filter(email=email).exists():
-            messages.error(request, 'Email already exists')
-            return redirect('admin_users')
+            if User.objects.filter(username=username).exists():
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Username already exists'
+                })
 
-        hashed_password = make_password(password)
-        user = User(username=username, email=email, password_hash=hashed_password, role=role)
-        user.save()
+            if User.objects.filter(email=email).exists():
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Email already exists'
+                })
 
-        messages.success(request, 'Admin user created successfully')
-        return redirect('admin_users')
+            # Force role to be 'admin'
+            hashed_password = make_password(password)
+            user = User(username=username, email=email, password_hash=hashed_password, role='admin')
+            user.save()
 
-    return render(request, 'create_admin.html')
+            return JsonResponse({'success': True})
+            
+        except json.JSONDecodeError:
+            return JsonResponse({
+                'success': False,
+                'error': 'Invalid request format.'
+            })
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'error': str(e)
+            })
+
+    return JsonResponse({
+        'success': False,
+        'error': 'Invalid request method.'
+    })
 
 @login_required
 @user_required
