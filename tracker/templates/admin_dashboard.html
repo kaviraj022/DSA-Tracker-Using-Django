@@ -61,9 +61,9 @@
                             <table class="table table-hover">
                                 <thead>
                                     <tr>
-                                        <th scope="col">Name</th>
-                                        <th scope="col">Links</th>
-                                        <th scope="col">Actions</th>
+                                        <th scope="col" class="text-center">Name</th>
+                                        <th scope="col" class="text-center">Links</th>
+                                        <th scope="col" class="text-center">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -99,7 +99,7 @@
                                                 </div>
                                             </div>
                                         </td>
-                                        <td>
+                                        <td class="text-center">
                                             <button class="btn btn-sm btn-danger delete-problem" data-id="{{ problem.id }}">
                                                 <i class="fas fa-trash"></i>
                                             </button>
@@ -151,37 +151,19 @@ function autoResizeTextarea(textarea) {
     // Reset height to minimum
     textarea.style.height = '28px';
     
-    // Create a hidden div to measure text
-    let hiddenDiv = document.createElement('div');
-    hiddenDiv.style.cssText = `
-        position: absolute;
-        top: -9999px;
-        width: ${textarea.offsetWidth}px;
-        font-family: ${getComputedStyle(textarea).fontFamily};
-        font-size: ${getComputedStyle(textarea).fontSize};
-        line-height: ${getComputedStyle(textarea).lineHeight};
-        padding: ${getComputedStyle(textarea).padding};
-        border: ${getComputedStyle(textarea).border};
-        box-sizing: border-box;
-        white-space: pre-wrap;
-        word-wrap: break-word;
-    `;
-    
-    hiddenDiv.textContent = textarea.value.replace(/\n/g, '<br>');
-    document.body.appendChild(hiddenDiv);
-    
-    // Get the height and ensure minimum height
-    const contentHeight = hiddenDiv.offsetHeight;
-    const newHeight = Math.max(28, contentHeight);
-    
-    document.body.removeChild(hiddenDiv);
-    textarea.style.height = newHeight + 'px';
+    // Use scrollHeight for calculation - more efficient than creating a hidden div
+    textarea.style.height = Math.max(28, textarea.scrollHeight) + 'px';
 }
 
 // Initialize all textareas
 document.addEventListener('DOMContentLoaded', function() {
-    document.querySelectorAll('.problem-name-input').forEach(textarea => {
+    const textareas = document.querySelectorAll('.problem-name-input');
+    
+    textareas.forEach(textarea => {
+        // Initial resize
         autoResizeTextarea(textarea);
+        
+        // Resize on input
         textarea.addEventListener('input', function() {
             autoResizeTextarea(this);
         });
@@ -675,7 +657,8 @@ document.addEventListener('keydown', function(e) {
     line-height: 1.4;
     font-size: 1rem;
     resize: none;
-    overflow: hidden;
+    overflow-y: hidden;
+    min-height: 28px;
     border: 1px solid var(--border-color);
     border-radius: 3px;
     box-sizing: border-box;
