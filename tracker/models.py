@@ -1,16 +1,24 @@
 from django.db import models
 
 class User(models.Model):
+    ROLE_CHOICES = [
+        ('superadmin', 'Super Admin'),
+        ('admin', 'Admin'),
+        ('user', 'User')
+    ]
+    
     username = models.CharField(max_length=100, unique=True)
     email = models.EmailField(max_length=100, unique=True)
     password_hash = models.CharField(max_length=255)
     role = models.CharField(
         max_length=10, 
-        choices=[('superadmin', 'superadmin'), ('admin', 'admin'), ('user', 'user')], 
+        choices=ROLE_CHOICES,
         default='user'
     )
+    
     class Meta:
-        db_table = 'users' 
+        db_table = 'users'
+
 class Problem(models.Model):
     topic = models.CharField(max_length=100)
     difficulty = models.CharField(max_length=50)

@@ -148,15 +148,43 @@ const saveChangesBtn = document.getElementById('saveChangesBtn');
 
 // Auto-resize textareas
 function autoResizeTextarea(textarea) {
-    textarea.style.height = 'auto';
-    textarea.style.height = (textarea.scrollHeight) + 'px';
+    // Reset height to minimum
+    textarea.style.height = '28px';
+    
+    // Create a hidden div to measure text
+    let hiddenDiv = document.createElement('div');
+    hiddenDiv.style.cssText = `
+        position: absolute;
+        top: -9999px;
+        width: ${textarea.offsetWidth}px;
+        font-family: ${getComputedStyle(textarea).fontFamily};
+        font-size: ${getComputedStyle(textarea).fontSize};
+        line-height: ${getComputedStyle(textarea).lineHeight};
+        padding: ${getComputedStyle(textarea).padding};
+        border: ${getComputedStyle(textarea).border};
+        box-sizing: border-box;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+    `;
+    
+    hiddenDiv.textContent = textarea.value.replace(/\n/g, '<br>');
+    document.body.appendChild(hiddenDiv);
+    
+    // Get the height and ensure minimum height
+    const contentHeight = hiddenDiv.offsetHeight;
+    const newHeight = Math.max(28, contentHeight);
+    
+    document.body.removeChild(hiddenDiv);
+    textarea.style.height = newHeight + 'px';
 }
 
 // Initialize all textareas
-document.querySelectorAll('.problem-name-input').forEach(textarea => {
-    autoResizeTextarea(textarea);
-    textarea.addEventListener('input', function() {
-        autoResizeTextarea(this);
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.problem-name-input').forEach(textarea => {
+        autoResizeTextarea(textarea);
+        textarea.addEventListener('input', function() {
+            autoResizeTextarea(this);
+        });
     });
 });
 
@@ -260,16 +288,6 @@ document.addEventListener('click', (e) => {
         suggestionsBox.classList.add('d-none');
     }
 });
-
-function getDifficultyColor(difficulty) {
-    const lowercaseDifficulty = difficulty.toLowerCase();
-    switch (lowercaseDifficulty) {
-        case 'easy': return 'easy';
-        case 'medium': return 'medium';
-        case 'hard': return 'hard';
-        default: return 'secondary';
-    }
-}
 
 // Attach save changes event to the button
 saveChangesBtn.addEventListener('click', saveAllChanges);
@@ -606,57 +624,63 @@ document.addEventListener('keydown', function(e) {
     100% { background-color: transparent; }
 }
 
-/* Difficulty colors for dark mode */
+/* Badge colors for dark mode - Remove unused badge styles */
 [data-theme="dark"] .text-easy,
 [data-theme="dark"] h5.text-easy {
-    color: #98ff98 !important; /* Light green */
+    color: #98ff98 !important;
 }
 
 [data-theme="dark"] .text-medium,
 [data-theme="dark"] h5.text-medium {
-    color: #ffd700 !important; /* Gold */
+    color: #ffd700 !important;
 }
 
 [data-theme="dark"] .text-hard,
 [data-theme="dark"] h5.text-hard {
-    color: #ff6b6b !important; /* Light red */
-}
-
-[data-theme="dark"] .difficulty-section h5 {
-    color: #e0e0e0 !important; /* Light gray for default difficulty color */
-}
-
-/* Badge colors for dark mode */
-[data-theme="dark"] .badge.bg-easy {
-    background-color: #2d5a27 !important; /* Darker green */
-    color: #98ff98 !important;
-}
-
-[data-theme="dark"] .badge.bg-medium {
-    background-color: #665e00 !important; /* Darker yellow */
-    color: #ffd700 !important;
-}
-
-[data-theme="dark"] .badge.bg-hard {
-    background-color: #662222 !important; /* Darker red */
     color: #ff6b6b !important;
 }
 
-[data-theme="dark"] .badge.bg-secondary {
-    background-color: #495057 !important;
+[data-theme="dark"] .difficulty-section h5 {
     color: #e0e0e0 !important;
+}
+
+/* Table header and cell styles */
+.table {
+    margin-bottom: 0;
+    border-collapse: collapse;
+}
+
+.table thead th {
+    padding: 4px 8px;
+    font-size: 1rem;
+    line-height: 1;
+    height: 28px !important;
+    vertical-align: middle;
+    background-color: var(--bg-primary);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.table tbody td {
+    padding: 4px 8px;
+    vertical-align: middle;
+    font-size: 1rem;
+    min-height: 28px;
+    line-height: 1;
 }
 
 /* Problem name input styling */
 .problem-name-input {
-    min-height: 38px;
-    height: auto;
-    white-space: normal;
-    word-wrap: break-word;
+    padding: 2px 6px;
+    margin: 0;
+    line-height: 1.4;
+    font-size: 1rem;
     resize: none;
-    overflow-y: hidden;
-    padding: 0.5rem;
-    margin: -0.5rem 0;
+    overflow: hidden;
+    border: 1px solid var(--border-color);
+    border-radius: 3px;
+    box-sizing: border-box;
+    width: 100%;
+    display: block;
 }
 </style>
 {% endblock %}
