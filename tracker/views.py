@@ -600,3 +600,60 @@ def login_view(request):
     if request.method == 'POST':
         if request.session.get('role') == 'superadmin':
             return redirect('admin_dashboard')
+
+@login_required
+@admin_required
+def reset_user_password(request, user_id):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            new_password = data.get('new_password')
+            
+            if not new_password:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Password cannot be empty'
+                })
+            
+            user = User.objects.get(id=user_id)
+            current_user_role = request.session.get('role')
+            
+            # Check permissions
+            if current_user_role == 'admin' and user.role in ['admin', 'superadmin']:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Regular admins cannot reset admin or superadmin passwords'
+                })
+            
+            if user.role == 'superadmin':
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Cannot reset superadmin password'
+                })
+            
+            # Reset the password
+            user.password_hash = make_password(new_password)
+            user.save()
+            
+            return JsonResponse({'success': True})
+            
+        except User.DoesNotExist:
+            return JsonResponse({
+                'success': False,
+                'error': 'User not found'
+            })
+        except json.JSONDecodeError:
+            return JsonResponse({
+                'success': False,
+                'error': 'Invalid request format'
+            })
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'error': str(e)
+            })
+    
+    return JsonResponse({
+        'success': False,
+        'error': 'Invalid request method'
+    })
