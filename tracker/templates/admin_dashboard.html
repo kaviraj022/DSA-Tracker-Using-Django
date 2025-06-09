@@ -476,8 +476,24 @@ document.addEventListener('keydown', function(e) {
 }
 
 .accordion-button:not(.collapsed) {
-    background-color: var(--bg-hover);
+    background-color: var(--bg-primary);
     color: var(--text-primary);
+    box-shadow: inset 0 -1px 0 var(--border-color);
+}
+
+[data-theme="dark"] .accordion-button {
+    color: #ffffff !important;
+}
+
+[data-theme="dark"] .accordion-button:not(.collapsed) {
+    background-color: var(--bg-primary);
+    color: #ffffff !important;
+}
+
+[data-theme="dark"] .accordion-button:hover,
+[data-theme="dark"] .accordion-button:focus {
+    color: #ffffff !important;
+    background-color: var(--bg-hover);
 }
 
 .accordion-button::after {
