@@ -79,6 +79,21 @@
                             </td>
                             <td style="text-align: center;">
                                 <div class="btn-group">
+                                    <button class="btn btn-sm btn-warning me-2" 
+                                        data-id="{{ user.id }}"
+                                        data-username="{{ user.username }}"
+                                        data-role="{{ user.role }}"
+                                        data-session-role="{{ request.session.role }}"
+                                        {% if user.role == 'superadmin' %}
+                                            disabled
+                                            title="Cannot reset superadmin password"
+                                        {% elif request.session.role == 'admin' and user.role == 'admin' %}
+                                            disabled
+                                            title="Regular admins cannot reset admin passwords"
+                                        {% endif %}
+                                        onclick="showResetPasswordModal(this)">
+                                        <i class="fas fa-key"></i>
+                                    </button>
                                     <button class="btn btn-sm btn-danger" 
                                         data-id="{{ user.id }}"
                                         data-role="{{ user.role }}"
@@ -106,6 +121,39 @@
 
 <!-- Messages container for alerts -->
 <div class="messages position-fixed top-0 end-0 p-3" style="z-index: 1050;"></div>
+
+<!-- Reset Password Modal -->
+<div class="modal fade" id="resetPasswordModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Reset User Password</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="resetPasswordForm">
+                    {% csrf_token %}
+                    <input type="hidden" id="resetUserId" name="user_id">
+                    <p>Reset password for user: <strong id="resetUsername"></strong></p>
+                    <div class="mb-3">
+                        <label class="form-label">New Password</label>
+                        <input type="password" class="form-control" name="new_password" id="newPassword" required>
+                        <small class="text-muted">Enter a strong password</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Confirm Password</label>
+                        <input type="password" class="form-control" name="confirm_password" id="confirmPassword" required>
+                        <small class="text-muted">Re-enter the password</small>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-warning" onclick="resetPassword()">Reset Password</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <!-- Create Admin Modal -->
 <div class="modal fade" id="createAdminModal" tabindex="-1">
@@ -351,6 +399,58 @@ function createAdmin() {
     .catch(error => {
         console.error('Error:', error);
         showAlert('Error creating admin: ' + error.message, 'danger');
+    });
+}
+
+function showResetPasswordModal(button) {
+    const userId = button.dataset.id;
+    const username = button.dataset.username;
+    
+    document.getElementById('resetUserId').value = userId;
+    document.getElementById('resetUsername').textContent = username;
+    document.getElementById('newPassword').value = '';
+    document.getElementById('confirmPassword').value = '';
+    
+    new bootstrap.Modal(document.getElementById('resetPasswordModal')).show();
+}
+
+function resetPassword() {
+    const userId = document.getElementById('resetUserId').value;
+    const newPassword = document.getElementById('newPassword').value;
+    const confirmPassword = document.getElementById('confirmPassword').value;
+    
+    if (newPassword !== confirmPassword) {
+        showAlert('Passwords do not match', 'danger');
+        return;
+    }
+    
+    if (!newPassword) {
+        showAlert('Password cannot be empty', 'danger');
+        return;
+    }
+    
+    fetch(`/admin/reset_password/${userId}/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: JSON.stringify({
+            new_password: newPassword
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('Password reset successfully', 'success');
+            bootstrap.Modal.getInstance(document.getElementById('resetPasswordModal')).hide();
+        } else {
+            showAlert(data.error || 'Error resetting password', 'danger');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showAlert('Error resetting password', 'danger');
     });
 }
 </script>
