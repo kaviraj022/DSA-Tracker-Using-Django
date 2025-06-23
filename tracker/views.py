@@ -7,7 +7,8 @@ from django.views.decorators.http import require_http_methods
 import json
 from django.db.models import Count
 from .decorators import login_required, admin_required, user_required
-
+from .models import Problem, UserNote, UserProgress
+from django.shortcuts import get_object_or_404
 
 def signin(request):
     if request.method == 'POST':
@@ -84,10 +85,7 @@ def logout_view(request):
     messages.success(request, 'Logged out successfully')
     return redirect('signin')
 
-from .decorators import login_required, admin_required, user_required
-from .models import Problem, UserNote, UserProgress
 
-# views.py
 @login_required
 @admin_required
 def admin_dashboard(request):
@@ -220,8 +218,6 @@ def add_problem(request):
         'success': False,
         'error': 'Invalid request method.'
     })
-
-from django.shortcuts import get_object_or_404
 
 @login_required
 @admin_required
@@ -595,11 +591,6 @@ def user_progress_view(request):
         'completion_rate': completion_rate,
         'topic_progress': topic_progress
     })
-
-def login_view(request):
-    if request.method == 'POST':
-        if request.session.get('role') == 'superadmin':
-            return redirect('admin_dashboard')
 
 @login_required
 @admin_required
