@@ -39,7 +39,6 @@ def signin(request):
 
     return render(request, 'signin.html')
 
-
 def signup(request):
     if request.method == 'POST':
         username = request.POST['username']
@@ -63,28 +62,22 @@ def signup(request):
 
     return render(request, 'signup.html')
 
-
 def forgot_password(request):
     if request.method == 'POST':
         email = request.POST.get('email')
 
         try:
             user = User.objects.get(email=email)
-            # TODO: Implement password reset email logic here
-            messages.success(request, f'Password reset instructions sent to {email}')
+            messages.success(request, "Contact your admin to reset your password")
         except User.DoesNotExist:
             messages.error(request, 'No account found with that email')
-
         return redirect('forgot_password')
-
     return render(request, 'forgot_password.html')
-
 
 def logout_view(request):
     request.session.flush()  # Clears all session data
     messages.success(request, 'Logged out successfully')
     return redirect('signin')
-
 
 @login_required
 @admin_required
