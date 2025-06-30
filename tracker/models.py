@@ -24,7 +24,7 @@ class Problem(models.Model):
     difficulty = models.CharField(max_length=50)
     name = models.CharField(max_length=255)
     youtube_link = models.URLField(blank=True, null=True)
-    practice_link = models.URLField(blank=True, null=True)
+    practice_link = models.URLField(blank=True, null=True, max_length=1000)
     class Meta:
         db_table = 'problems' 
 class UserNote(models.Model):
