@@ -122,3 +122,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 SESSION_COOKIE_AGE = 1209600  # 2 weeks, in seconds
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False  # If True, session ends when browser closes
+
+CSRF_TRUSTED_ORIGINS = [
+    "https://dsa-tracker-using-django-production.up.railway.app"
+]
