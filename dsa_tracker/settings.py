@@ -20,7 +20,7 @@ dotenv.load_dotenv(os.path.join(BASE_DIR, '.env'))
 
 DEBUG = True
 SECRET_KEY = os.getenv("SECRET_KEY")
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
